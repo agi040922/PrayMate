@@ -11,6 +11,7 @@ import { PrayerRoomList } from "@/components/prayer-room-list"
 import { Pencil, LogOut, Bell, Clock, Calendar, CalendarDays } from "lucide-react"
 import Link from "next/link"
 import { ManagePrayerRoomDialog } from "@/components/manage-prayer-room-dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("my-prayers")
@@ -186,6 +187,3 @@ export default function ProfilePage() {
     </div>
   )
 }
-
-// 필요한 컴포넌트 import
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"

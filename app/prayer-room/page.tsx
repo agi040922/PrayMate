@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -19,11 +20,52 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import { useAuth } from "@/lib/context/AuthContext"
+import { signOut } from "@/lib/supabase/users"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function PrayerRoomPage() {
   const [showForm, setShowForm] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [viewMode, setViewMode] = useState<"card" | "list" | "compact">("card")
+  
+  const router = useRouter()
+  const { user, loading } = useAuth()
+  const { toast } = useToast()
+  
+  // 로그인하지 않은 경우 로그인 페이지로 리다이렉트
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login")
+    }
+  }, [user, loading, router])
+  
+  // 로그아웃 처리
+  const handleSignOut = async () => {
+    try {
+      await signOut()
+      toast({
+        title: "로그아웃 성공",
+        description: "성공적으로 로그아웃되었습니다.",
+      })
+      router.push("/login")
+    } catch (error) {
+      console.error(error)
+      toast({
+        title: "로그아웃 실패",
+        description: "로그아웃 처리 중 오류가 발생했습니다.",
+        variant: "destructive",
+      })
+    }
+  }
+  
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p>로딩 중...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -89,12 +131,10 @@ export default function PrayerRoomPage() {
                 </DropdownMenuItem>
               </Link>
               <DropdownMenuSeparator />
-              <Link href="/" passHref legacyBehavior>
-                <DropdownMenuItem>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>로그아웃</span>
-                </DropdownMenuItem>
-              </Link>
+              <DropdownMenuItem onClick={handleSignOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>로그아웃</span>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
