@@ -40,6 +40,7 @@ export default function LoginPage() {
               </TabsList>
             </CardHeader>
 
+            {/* 로그인 탭 */}
             <TabsContent value="login" className="mt-0">
               <CardContent className="pt-4">
                 <div className="grid gap-4">
@@ -128,6 +129,7 @@ export default function LoginPage() {
               </CardFooter>
             </TabsContent>
 
+            {/* 회원가입 탭 */} 
             <TabsContent value="register" className="mt-0">
               <CardContent className="pt-4">
                 <div className="grid gap-4">
