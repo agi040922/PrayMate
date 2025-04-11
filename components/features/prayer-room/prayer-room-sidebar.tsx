@@ -8,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import { CreatePrayerRoomDialog } from "@/components/create-prayer-room-dialog"
+import { CreatePrayerRoomDialog } from "@/components/features/prayer-room/create-prayer-room-dialog"
 
 interface PrayerRoom {
   id: string

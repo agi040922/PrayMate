@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { MessageSquare, Heart, CheckCircle, Clock, Pencil, Trash2, MoreVertical } from "lucide-react"
-import { CommentSection } from "@/components/comment-section"
-import { PrayerResponseDialog } from "@/components/prayer-response-dialog"
+import { CommentSection } from "@/components/features/comments/comment-section"
+import { PrayerResponseDialog } from "@/components/features/prayer-request/prayer-response-dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,

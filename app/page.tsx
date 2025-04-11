@@ -1,14 +1,14 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { LandingNavbar } from "@/components/landing-navbar"
-import { LandingFooter } from "@/components/landing-footer"
-import { ServiceFeatures } from "@/components/service-features"
-import { Testimonials } from "@/components/testimonials"
-import { HowToUse } from "@/components/how-to-use"
-import { BibleVerseSection } from "@/components/bible-verse-section"
-import { PrayerGallery } from "@/components/prayer-gallery"
-import { ServiceIntro } from "@/components/service-intro"
+import { LandingNavbar } from "@/components/layout/landing-navbar"
+import { LandingFooter } from "@/components/layout/landing-footer"
+import { ServiceFeatures } from "@/components/pages/service-features"
+import { Testimonials } from "@/components/pages/testimonials"
+import { HowToUse } from "@/components/pages/how-to-use"
+import { BibleVerseSection } from "@/components/pages/bible-verse-section"
+import { PrayerGallery } from "@/components/pages/prayer-gallery"
+import { ServiceIntro } from "@/components/pages/service-intro"
 
 export default function Home() {
   return (

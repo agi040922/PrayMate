@@ -1,7 +1,7 @@
 import type React from "react"
 import "@/app/globals.css"
 import { Inter } from "next/font/google"
-import { ThemeProvider } from "@/components/theme-provider"
+import { ThemeProvider } from "@/components/utils/theme-provider"
 import { AuthProvider } from "@/lib/context/AuthContext"
 import { Toaster } from "@/components/ui/toaster"
 
