@@ -87,12 +87,14 @@ content TEXT NOT NULL
 );
 
 CREATE TABLE notification_settings (
-setting_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-user_id UUID REFERENCES users(user_id) ON DELETE CASCADE,
-room_id UUID REFERENCES prayer_rooms(room_id) ON DELETE CASCADE,
-category_id INT REFERENCES categories(category_id),
-notification_frequency VARCHAR(20), -- immediately, daily, weekly
-notification_enabled BOOLEAN DEFAULT TRUE
+  setting_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(user_id) ON DELETE CASCADE UNIQUE NOT NULL, -- user_id는 고유해야 함
+  comment_notification BOOLEAN DEFAULT TRUE,
+  prayer_notification BOOLEAN DEFAULT TRUE,
+  answer_notification BOOLEAN DEFAULT TRUE,
+  invite_notification BOOLEAN DEFAULT TRUE,
+  system_notification BOOLEAN DEFAULT TRUE,
+  updated_at TIMESTAMP DEFAULT now()
 );
 
 CREATE TABLE activity_logs (
@@ -116,3 +118,16 @@ created_at TIMESTAMP DEFAULT now()
 
 ALTER TABLE room_participants
 ADD CONSTRAINT chk_role CHECK (role IN ('admin', 'member'));
+
+CREATE TABLE notifications (
+  notification_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(user_id) ON DELETE CASCADE,
+  type VARCHAR(20) CHECK (type IN ('comment', 'prayer', 'answer', 'invite', 'system')),
+  title VARCHAR(100) NOT NULL,
+  content TEXT NOT NULL,
+  is_read BOOLEAN DEFAULT FALSE,
+  sender_id UUID REFERENCES users(user_id) ON DELETE SET NULL,
+  request_id UUID REFERENCES prayer_requests(request_id) ON DELETE SET NULL,
+  room_id UUID REFERENCES prayer_rooms(room_id) ON DELETE SET NULL,
+  created_at TIMESTAMP DEFAULT now()
+);

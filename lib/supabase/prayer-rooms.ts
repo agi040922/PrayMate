@@ -295,3 +295,92 @@ export async function joinPrayerRoom(data: {
   if (error) throw error
   return participant
 }
+
+/**
+ * 기도방 이름으로 검색
+ */
+export async function searchPrayerRoomsByName(searchTerm: string) {
+  const { data, error } = await supabase
+    .from("prayer_rooms")
+    .select("*")
+    // ilike를 사용하여 대소문자 구분 없이 부분 일치 검색
+    .ilike("title", `%${searchTerm}%`)
+    .order("created_at", { ascending: false })
+  
+  if (error) throw error
+  return data
+}
+
+/**
+ * 기도방 ID로 검색 (정확한 일치)
+ */
+export async function searchPrayerRoomById(roomId: string) {
+  const { data, error } = await supabase
+    .from("prayer_rooms")
+    .select("*")
+    .eq("room_id", roomId)
+    .single()
+  
+  if (error && error.code === "PGRST116") {
+    // 결과가 없을 경우
+    return null
+  }
+  
+  if (error) throw error
+  return data
+}
+
+/**
+ * 검색 결과를 바탕으로 기도방 참여
+ */
+export async function joinPrayerRoomBySearch(data: {
+  room_id: string
+  user_id: string
+}) {
+  const { room_id, user_id } = data
+  
+  // 1. 먼저 기도방이 존재하는지 확인
+  const { data: roomData, error: roomError } = await supabase
+    .from("prayer_rooms")
+    .select("*")
+    .eq("room_id", room_id)
+    .single()
+  
+  if (roomError) throw roomError
+  
+  // 2. 이미 참여 중인지 확인
+  const { data: existingParticipant, error: checkError } = await supabase
+    .from("room_participants")
+    .select("*")
+    .eq("room_id", room_id)
+    .eq("user_id", user_id)
+    .single()
+    
+  // 이미 참여 중이면 참여 중임을 알림
+  if (!checkError && existingParticipant) {
+    return { 
+      alreadyJoined: true, 
+      roomData,
+      participantData: existingParticipant
+    }
+  }
+  
+  // 3. 참여 처리
+  const { data: participant, error } = await supabase
+    .from("room_participants")
+    .insert({
+      room_id,
+      user_id,
+      role: "member" // 검색으로 참여하는 사용자는 기본적으로 member 권한
+    })
+    .select("*")
+    .single()
+  
+  if (error) throw error
+  
+  return { 
+    alreadyJoined: false, 
+    roomData,
+    participantData: participant
+  }
+}

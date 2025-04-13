@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/components/ui/use-toast"
 import { useAuth } from "@/lib/context/AuthContext"
 import { createPrayerRequest, getCategories } from "@/lib/supabase/prayer-requests"
+import { PrayerAIHelper } from "./prayer-ai-helper"
 
 interface PrayerRequestFormProps {
   roomId?: string
@@ -117,6 +118,19 @@ export function PrayerRequestForm({ roomId, onClose }: PrayerRequestFormProps) {
       setIsSubmitting(false)
     }
   }
+  
+  // AI 도우미 관련 핸들러
+  const handleApplyTitle = (newTitle: string) => {
+    setTitle(newTitle)
+  }
+  
+  const handleApplyContent = (newContent: string) => {
+    setContent(newContent)
+  }
+  
+  const handleApplyVerse = (verse: string) => {
+    setBibleVerse(verse)
+  }
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -152,7 +166,7 @@ export function PrayerRequestForm({ roomId, onClose }: PrayerRequestFormProps) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid gap-2">
+            <div className="grid gap-2 relative">
               <Label htmlFor="content">내용</Label>
               <Textarea 
                 id="content" 
@@ -161,6 +175,15 @@ export function PrayerRequestForm({ roomId, onClose }: PrayerRequestFormProps) {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 required 
+              />
+              
+              {/* AI 도우미 컴포넌트 */}
+              <PrayerAIHelper
+                title={title}
+                content={content}
+                onApplyTitle={handleApplyTitle}
+                onApplyContent={handleApplyContent}
+                onApplyVerse={handleApplyVerse}
               />
             </div>
             <div className="grid gap-2">

@@ -11,7 +11,9 @@ import { CreatePrayerRoomDialog } from "@/components/features/prayer-room/real-c
 import { getUserPrayerRooms } from "@/lib/supabase/prayer-rooms"
 import { useAuth } from "@/lib/context/AuthContext"
 import { useToast } from "@/components/ui/use-toast"
-import { Plus } from "lucide-react"
+import { Plus, Search } from "lucide-react"
+import { PrayerRoomSearch } from "./prayer-room-search"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
 interface PrayerRoomSidebarProps {
   className?: string
@@ -24,32 +26,33 @@ export function PrayerRoomSidebar({ className, onSelect }: PrayerRoomSidebarProp
   const [rooms, setRooms] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
   
   const { user } = useAuth()
   const { toast } = useToast()
   
-  useEffect(() => {
-    const fetchRooms = async () => {
-      if (!user) {
-        setLoading(false)
-        return
-      }
-      
-      try {
-        const data = await getUserPrayerRooms(user.id)
-        setRooms(data || [])
-      } catch (error) {
-        console.error("기도방 목록 로딩 실패:", error)
-        toast({
-          title: "기도방 목록 로딩 실패",
-          description: "기도방 목록을 불러오는데 문제가 발생했습니다.",
-          variant: "destructive",
-        })
-      } finally {
-        setLoading(false)
-      }
+  const fetchRooms = async () => {
+    if (!user) {
+      setLoading(false)
+      return
     }
     
+    try {
+      const data = await getUserPrayerRooms(user.id)
+      setRooms(data || [])
+    } catch (error) {
+      console.error("기도방 목록 로딩 실패:", error)
+      toast({
+        title: "기도방 목록 로딩 실패",
+        description: "기도방 목록을 불러오는데 문제가 발생했습니다.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  useEffect(() => {
     fetchRooms()
   }, [user, toast])
   
@@ -60,11 +63,44 @@ export function PrayerRoomSidebar({ className, onSelect }: PrayerRoomSidebarProp
     }
   }
 
+  const handleJoinRoom = async (roomId: string) => {
+    await fetchRooms() // 기도방 목록 새로고침
+    
+    // 방금 참여한 기도방 선택
+    setSelectedRoomId(roomId)
+    if (onSelect) {
+      onSelect(roomId)
+    }
+    
+    // 검색 패널 닫기
+    setIsSearchOpen(false)
+  }
+
   return (
     <div className={cn("pb-12", className)}>
       <div className="space-y-4 py-4">
         <div className="px-4 py-2">
-          <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">내 기도방</h2>
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="px-2 text-lg font-semibold tracking-tight">내 기도방</h2>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setIsSearchOpen(!isSearchOpen)}
+              title="기도방 검색"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          {/* 검색 컴포넌트 */}
+          <Collapsible open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+            <CollapsibleContent className="mb-4">
+              <div className="border rounded-md p-2 bg-background/50">
+                <PrayerRoomSearch onJoin={handleJoinRoom} />
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+          
           <div className="space-y-1">
             <Button
               variant="secondary"
