@@ -1,167 +1,217 @@
 "use client"
 
-import { useState } from "react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { ThumbsUp } from "lucide-react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-
-interface Comment {
-  id: string
-  author: string
-  authorAvatar: string
-  content: string
-  date: string
-  likes: number
-}
-
-// 샘플 댓글 데이터
-const commentsData: Record<string, Comment[]> = {
-  "1": [
-    {
-      id: "c1",
-      author: "박은혜",
-      authorAvatar: "",
-      content: "함께 기도하겠습니다. 속히 회복되시길 바랍니다.",
-      date: "2023-04-08",
-      likes: 3,
-    },
-    {
-      id: "c2",
-      author: "이소망",
-      authorAvatar: "",
-      content: "저희 아버지도 비슷한 상황이셨는데 많이 회복되셨어요. 힘내세요!",
-      date: "2023-04-09",
-      likes: 2,
-    },
-    {
-      id: "c3",
-      author: "김믿음",
-      authorAvatar: "",
-      content: "말씀과 함께 기도드립니다. '여호와는 나의 목자시니 내게 부족함이 없으리로다'",
-      date: "2023-04-10",
-      likes: 5,
-    },
-  ],
-  "3": [
-    {
-      id: "c4",
-      author: "최사랑",
-      authorAvatar: "",
-      content: "선교사님들의 안전과 사역을 위해 매일 기도하고 있습니다.",
-      date: "2023-04-06",
-      likes: 7,
-    },
-    {
-      id: "c5",
-      author: "정평안",
-      authorAvatar: "",
-      content: "현지 소식 공유해주시면 더 구체적으로 기도할 수 있을 것 같아요.",
-      date: "2023-04-07",
-      likes: 4,
-    },
-  ],
-}
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { useToast } from "@/components/ui/use-toast"
+import { useAuth } from "@/lib/context/AuthContext"
+import { getComments, addComment, deleteComment } from "@/lib/supabase/prayer-requests"
+import { Trash2 } from "lucide-react"
 
 interface CommentSectionProps {
-  prayerId: string
-  onClose: () => void
+  requestId: string
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 
-export function CommentSection({ prayerId, onClose }: CommentSectionProps) {
+export function CommentSection({ requestId, open, onOpenChange }: CommentSectionProps) {
+  const [comments, setComments] = useState<any[]>([])
   const [newComment, setNewComment] = useState("")
-  const [comments, setComments] = useState<Comment[]>(commentsData[prayerId] || [])
-  const [likedComments, setLikedComments] = useState<string[]>([])
-
-  const handleSubmitComment = () => {
-    if (!newComment.trim()) return
-
-    const comment: Comment = {
-      id: `c${Date.now()}`,
-      author: "나",
-      authorAvatar: "",
-      content: newComment,
-      date: new Date().toISOString().split("T")[0],
-      likes: 0,
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  
+  const { toast } = useToast()
+  const { user } = useAuth()
+  
+  // 댓글 목록 불러오기
+  useEffect(() => {
+    const fetchComments = async () => {
+      if (!requestId) return
+      
+      try {
+        setIsLoading(true)
+        const data = await getComments(requestId)
+        setComments(data || [])
+      } catch (error) {
+        console.error("댓글 로딩 실패:", error)
+        toast({
+          title: "댓글 로딩 실패",
+          description: "댓글을 불러오는데 문제가 발생했습니다.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
+      }
     }
-
-    setComments([...comments, comment])
-    setNewComment("")
+    
+    if (open) {
+      fetchComments()
+    }
+  }, [requestId, open, toast])
+  
+  // 새 댓글 등록
+  const handleSubmitComment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!user) {
+      toast({
+        title: "로그인 필요",
+        description: "댓글을 작성하려면 로그인이 필요합니다.",
+        variant: "destructive",
+      })
+      return
+    }
+    
+    if (!newComment.trim()) {
+      toast({
+        title: "입력 오류",
+        description: "댓글 내용을 입력해주세요.",
+        variant: "destructive",
+      })
+      return
+    }
+    
+    setIsSubmitting(true)
+    
+    try {
+      const comment = await addComment({
+        request_id: requestId,
+        user_id: user.id,
+        content: newComment
+      })
+      
+      // 사용자 정보 추가
+      comment.users = {
+        user_id: user.id,
+        name: user.user_metadata?.name || user.email,
+        email: user.email
+      }
+      
+      // 댓글 목록 업데이트
+      setComments([...comments, comment])
+      setNewComment("")
+      
+      toast({
+        title: "댓글 등록 완료",
+        description: "댓글이 성공적으로 등록되었습니다."
+      })
+    } catch (error: any) {
+      console.error("댓글 등록 실패:", error)
+      toast({
+        title: "댓글 등록 실패",
+        description: error.message || "댓글 등록 중 오류가 발생했습니다.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
-
-  const handleLikeComment = (commentId: string) => {
-    if (likedComments.includes(commentId)) {
-      setLikedComments(likedComments.filter((id) => id !== commentId))
-      setComments(
-        comments.map((comment) => (comment.id === commentId ? { ...comment, likes: comment.likes - 1 } : comment)),
-      )
-    } else {
-      setLikedComments([...likedComments, commentId])
-      setComments(
-        comments.map((comment) => (comment.id === commentId ? { ...comment, likes: comment.likes + 1 } : comment)),
-      )
+  
+  // 댓글 삭제
+  const handleDeleteComment = async (commentId: string) => {
+    if (!user) return
+    
+    try {
+      await deleteComment(commentId)
+      
+      // 댓글 목록 업데이트
+      setComments(comments.filter(comment => comment.comment_id !== commentId))
+      
+      toast({
+        title: "댓글 삭제 완료",
+        description: "댓글이 삭제되었습니다."
+      })
+    } catch (error: any) {
+      console.error("댓글 삭제 실패:", error)
+      toast({
+        title: "댓글 삭제 실패",
+        description: error.message || "댓글 삭제 중 오류가 발생했습니다.",
+        variant: "destructive",
+      })
     }
   }
 
   return (
-    <Dialog open={true} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>댓글</DialogTitle>
         </DialogHeader>
-        <div className="max-h-[400px] overflow-y-auto">
-          {comments.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">아직 댓글이 없습니다. 첫 댓글을 남겨보세요!</p>
-          ) : (
-            <div className="space-y-4">
-              {comments.map((comment) => (
-                <div key={comment.id} className="flex gap-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={comment.authorAvatar || "/placeholder-user.jpg"} alt={comment.author} />
-                    <AvatarFallback>{comment.author.substring(0, 2)}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <div className="font-medium text-sm">{comment.author}</div>
-                      <div className="text-xs text-muted-foreground">{comment.date}</div>
-                    </div>
-                    <p className="text-sm mt-1">{comment.content}</p>
-                    <div className="mt-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 text-xs"
-                        onClick={() => handleLikeComment(comment.id)}
-                      >
-                        <ThumbsUp
-                          className={`mr-1 h-3 w-3 ${likedComments.includes(comment.id) ? "fill-current text-sky-600" : ""}`}
-                        />
-                        {comment.likes}
-                      </Button>
-                    </div>
-                  </div>
+        
+        {isLoading ? (
+          <div className="flex justify-center py-8">댓글을 불러오는 중...</div>
+        ) : (
+          <div className="flex flex-col h-[400px]">
+            <ScrollArea className="flex-1 pr-4">
+              {comments.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-[200px] text-center">
+                  <p className="text-muted-foreground">첫 댓글을 작성해보세요!</p>
                 </div>
-              ))}
+              ) : (
+                <div className="space-y-4">
+                  {comments.map((comment) => (
+                    <div key={comment.comment_id} className="flex gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src="" alt={comment.users?.name} />
+                        <AvatarFallback>{comment.users?.name?.substring(0, 2)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-baseline gap-2">
+                            <p className="text-sm font-semibold">{comment.users?.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(comment.created_at).toLocaleString()}
+                            </p>
+                          </div>
+                          {user?.id === comment.user_id && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6"
+                              onClick={() => handleDeleteComment(comment.comment_id)}
+                            >
+                              <Trash2 className="h-3 w-3 text-destructive" />
+                            </Button>
+                          )}
+                        </div>
+                        <p className="text-sm">{comment.content}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+            
+            <div className="mt-4 border-t pt-4">
+              <form onSubmit={handleSubmitComment} className="flex flex-col gap-2">
+                <Textarea
+                  placeholder="댓글을 입력하세요"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  rows={2}
+                />
+                <div className="flex justify-end">
+                  <Button 
+                    type="submit" 
+                    size="sm"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "등록 중..." : "댓글 등록"}
+                  </Button>
+                </div>
+              </form>
             </div>
-          )}
-        </div>
-        <div className="flex gap-2 mt-4">
-          <Textarea
-            placeholder="격려의 댓글을 남겨보세요..."
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            className="min-h-[80px]"
-          />
-        </div>
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={onClose}>
-            취소
-          </Button>
-          <Button size="sm" onClick={handleSubmitComment} disabled={!newComment.trim()}>
-            댓글 작성
-          </Button>
-        </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   )

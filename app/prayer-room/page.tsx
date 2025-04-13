@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PrayerRequestList } from "@/components/features/prayer-request/prayer-request-list"
 import { PrayerRequestForm } from "@/components/features/prayer-request/prayer-request-form"
 import { PrayerRoomSidebar } from "@/components/features/prayer-room/prayer-room-sidebar"
+import { RoomSummary } from "@/components/features/prayer-room/room-summary"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PlusIcon, LayoutGrid, List, Menu, Bell, User, Download, Search, Settings, LogOut } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -23,11 +24,15 @@ import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/lib/context/AuthContext"
 import { signOut } from "@/lib/supabase/users"
 import { useToast } from "@/components/ui/use-toast"
+import { getPrayerRoomDetails } from "@/lib/supabase/prayer-rooms"
 
 export default function PrayerRoomPage() {
   const [showForm, setShowForm] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [viewMode, setViewMode] = useState<"card" | "list" | "compact">("card")
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null)
+  const [selectedRoom, setSelectedRoom] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
   
   const router = useRouter()
   const { user, loading } = useAuth()
@@ -39,6 +44,33 @@ export default function PrayerRoomPage() {
       router.push("/login")
     }
   }, [user, loading, router])
+  
+  // 선택한 기도방 상세 정보 가져오기
+  useEffect(() => {
+    const fetchRoomDetails = async () => {
+      if (!selectedRoomId) {
+        setSelectedRoom(null)
+        return
+      }
+      
+      try {
+        setIsLoading(true)
+        const roomData = await getPrayerRoomDetails(selectedRoomId)
+        setSelectedRoom(roomData)
+      } catch (error) {
+        console.error("기도방 정보 로딩 실패:", error)
+        toast({
+          title: "기도방 정보 로딩 실패",
+          description: "기도방 정보를 불러오는데 문제가 발생했습니다.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
+    fetchRoomDetails()
+  }, [selectedRoomId, toast])
   
   // 로그아웃 처리
   const handleSignOut = async () => {
@@ -57,6 +89,11 @@ export default function PrayerRoomPage() {
         variant: "destructive",
       })
     }
+  }
+  
+  // 기도방 선택 처리
+  const handleRoomSelect = (roomId: string) => {
+    setSelectedRoomId(roomId)
   }
   
   if (loading) {
@@ -84,12 +121,14 @@ export default function PrayerRoomPage() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-72 p-0">
-            <PrayerRoomSidebar className="h-full" />
+            <PrayerRoomSidebar className="h-full" onSelect={handleRoomSelect} />
           </SheetContent>
         </Sheet>
 
         <div className="flex-1 md:text-center">
-          <h1 className="text-lg font-semibold md:text-xl">가족을 위한 기도방</h1>
+          <h1 className="text-lg font-semibold md:text-xl">
+            {selectedRoom ? selectedRoom.title : "내 기도방"}
+          </h1>
         </div>
 
         <div className="flex items-center gap-2">
@@ -143,65 +182,86 @@ export default function PrayerRoomPage() {
       {/* Main Content */}
       <div className="flex flex-1 flex-col md:flex-row">
         {/* Left Sidebar - Prayer Rooms */}
-        <PrayerRoomSidebar className="hidden border-r md:block md:w-64" />
+        <PrayerRoomSidebar className="hidden border-r md:block md:w-64" onSelect={handleRoomSelect} />
 
         {/* Main Content Area */}
         <main className="flex-1 p-4 md:p-6">
-          <div className="mx-auto max-w-4xl">
-            {/* Room Description */}
-            <div className="mb-6 hidden md:block">
-              <p className="text-muted-foreground">우리 가족을 위한 기도제목을 나누는 공간입니다.</p>
-            </div>
+          {selectedRoomId ? (
+            <div className="mx-auto max-w-4xl">
+              {/* 선택된 기도방 정보 */}
+              <div className="mb-6">
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-10">
+                    <p>기도방 정보를 불러오는 중...</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* 기도방 요약 정보 */}
+                    <RoomSummary roomId={selectedRoomId} />
+                    
+                    {/* Filters and View Options */}
+                    <div className="my-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-center gap-2">
+                        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                          <SelectTrigger className="w-full sm:w-[180px]">
+                            <SelectValue placeholder="카테고리" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">전체</SelectItem>
+                            <SelectItem value="personal">개인</SelectItem>
+                            <SelectItem value="community">공동체</SelectItem>
+                            <SelectItem value="thanksgiving">감사</SelectItem>
+                            <SelectItem value="intercession">중보기도</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <div className="relative sm:hidden">
+                          <Input type="search" placeholder="검색" className="w-full" />
+                        </div>
+                      </div>
 
-            {/* Filters and View Options */}
-            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2">
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="카테고리" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">전체</SelectItem>
-                    <SelectItem value="personal">개인</SelectItem>
-                    <SelectItem value="community">공동체</SelectItem>
-                    <SelectItem value="thanksgiving">감사</SelectItem>
-                    <SelectItem value="intercession">중보기도</SelectItem>
-                  </SelectContent>
-                </Select>
-                <div className="relative sm:hidden">
-                  <Input type="search" placeholder="검색" className="w-full" />
-                </div>
+                      <div className="flex items-center gap-2">
+                        <Tabs defaultValue={viewMode} onValueChange={(v) => setViewMode(v as any)}>
+                          <TabsList>
+                            <TabsTrigger value="card">
+                              <LayoutGrid className="h-4 w-4" />
+                            </TabsTrigger>
+                            <TabsTrigger value="list">
+                              <List className="h-4 w-4" />
+                            </TabsTrigger>
+                            <TabsTrigger value="compact">
+                              <span className="text-xs">제목만</span>
+                            </TabsTrigger>
+                          </TabsList>
+                        </Tabs>
+                      </div>
+                    </div>
+
+                    {/* Prayer Request List */}
+                    <PrayerRequestList 
+                      roomId={selectedRoomId} 
+                      category={selectedCategory} 
+                      viewMode={viewMode} 
+                    />
+                  </>
+                )}
               </div>
-
-              <div className="flex items-center gap-2">
-                <Tabs defaultValue={viewMode} onValueChange={(v) => setViewMode(v as any)}>
-                  <TabsList>
-                    <TabsTrigger value="card">
-                      <LayoutGrid className="h-4 w-4" />
-                    </TabsTrigger>
-                    <TabsTrigger value="list">
-                      <List className="h-4 w-4" />
-                    </TabsTrigger>
-                    <TabsTrigger value="compact">
-                      <span className="text-xs">제목만</span>
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
             </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-10">
+              <p className="mb-4 text-center text-muted-foreground">좌측 메뉴에서 기도방을 선택하세요</p>
+            </div>
+          )}
 
-            {/* Prayer Request List */}
-            <PrayerRequestList category={selectedCategory} viewMode={viewMode} />
+          {/* Reports Button */}
+          <Button variant="outline" className="fixed bottom-24 right-6 shadow-md" asChild>
+            <Link href="/reports">
+              <Download className="mr-2 h-4 w-4" />
+              리포트
+            </Link>
+          </Button>
 
-            {/* Reports Button - 추가된 부분 */}
-            <Button variant="outline" className="fixed bottom-24 right-6 shadow-md" asChild>
-              <Link href="/reports">
-                <Download className="mr-2 h-4 w-4" />
-                리포트
-              </Link>
-            </Button>
-
-            {/* Add Prayer Request Button */}
+          {/* Add Prayer Request Button - 기도방이 선택되었을 때만 표시 */}
+          {selectedRoomId && (
             <Button
               onClick={() => setShowForm(true)}
               className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg"
@@ -209,10 +269,15 @@ export default function PrayerRoomPage() {
             >
               <PlusIcon className="h-6 w-6" />
             </Button>
+          )}
 
-            {/* Prayer Request Form */}
-            {showForm && <PrayerRequestForm onClose={() => setShowForm(false)} />}
-          </div>
+          {/* Prayer Request Form */}
+          {showForm && selectedRoomId && (
+            <PrayerRequestForm 
+              roomId={selectedRoomId} 
+              onClose={() => setShowForm(false)} 
+            />
+          )}
         </main>
       </div>
     </div>

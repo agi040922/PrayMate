@@ -1,110 +1,130 @@
 "use client"
 
-import { useState } from "react"
-import type React from "react"
-import { Plus, Lock, Globe, Settings, ChevronLeft, ChevronRight } from "lucide-react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import { CreatePrayerRoomDialog } from "@/components/features/prayer-room/create-prayer-room-dialog"
+import { ManagePrayerRoomDialog } from "@/components/features/prayer-room/create-prayer-room-dialog"
+import { CreatePrayerRoomDialog } from "@/components/features/prayer-room/real-create-prayer-room-dialog"
+import { getUserPrayerRooms } from "@/lib/supabase/prayer-rooms"
+import { useAuth } from "@/lib/context/AuthContext"
+import { useToast } from "@/components/ui/use-toast"
+import { Plus } from "lucide-react"
 
-interface PrayerRoom {
-  id: string
-  name: string
-  isPrivate: boolean
-  unreadCount: number
-  isActive?: boolean
+interface PrayerRoomSidebarProps {
+  className?: string
+  onSelect?: (roomId: string) => void
 }
 
-const prayerRooms: PrayerRoom[] = [
-  { id: "1", name: "가족을 위한 기도", isPrivate: true, unreadCount: 3, isActive: true },
-  { id: "2", name: "교회 공동체", isPrivate: false, unreadCount: 0 },
-  { id: "3", name: "선교사 중보기도", isPrivate: false, unreadCount: 5 },
-  { id: "4", name: "개인 기도제목", isPrivate: true, unreadCount: 0 },
-  { id: "5", name: "나라와 민족을 위한 기도", isPrivate: false, unreadCount: 2 },
-]
-
-interface PrayerRoomSidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
-
-export function PrayerRoomSidebar({ className, ...props }: PrayerRoomSidebarProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false)
-  const [showCreateDialog, setShowCreateDialog] = useState(false)
+export function PrayerRoomSidebar({ className, onSelect }: PrayerRoomSidebarProps) {
+  const [openCreateDialog, setOpenCreateDialog] = useState(false)
+  const [openManageDialog, setOpenManageDialog] = useState(false)
+  const [rooms, setRooms] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null)
+  
+  const { user } = useAuth()
+  const { toast } = useToast()
+  
+  useEffect(() => {
+    const fetchRooms = async () => {
+      if (!user) {
+        setLoading(false)
+        return
+      }
+      
+      try {
+        const data = await getUserPrayerRooms(user.id)
+        setRooms(data || [])
+      } catch (error) {
+        console.error("기도방 목록 로딩 실패:", error)
+        toast({
+          title: "기도방 목록 로딩 실패",
+          description: "기도방 목록을 불러오는데 문제가 발생했습니다.",
+          variant: "destructive",
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchRooms()
+  }, [user, toast])
+  
+  const handleRoomClick = (roomId: string) => {
+    setSelectedRoomId(roomId)
+    if (onSelect) {
+      onSelect(roomId)
+    }
+  }
 
   return (
-    <>
-      <div
-        className={cn("flex flex-col transition-all duration-300", isCollapsed ? "w-16" : "w-64", className)}
-        {...props}
-      >
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          {!isCollapsed && <h2 className="text-lg font-semibold">기도방 목록</h2>}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className={isCollapsed ? "mx-auto" : ""}
-          >
-            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </Button>
-        </div>
-
-        <ScrollArea className="flex-1 px-2">
-          <div className="space-y-1 p-2">
-            {prayerRooms.map((room) => (
-              <Button
-                key={room.id}
-                variant={room.isActive ? "secondary" : "ghost"}
-                className="w-full justify-start"
-                title={isCollapsed ? room.name : undefined}
-              >
-                <span className="mr-2">
-                  {room.isPrivate ? <Lock className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
-                </span>
-                {!isCollapsed && <span className="truncate">{room.name}</span>}
-                {!isCollapsed && room.unreadCount > 0 && (
-                  <Badge variant="secondary" className="ml-auto">
-                    {room.unreadCount}
-                  </Badge>
-                )}
-                {isCollapsed && room.unreadCount > 0 && (
-                  <Badge variant="secondary" className="absolute -right-1 -top-1 h-4 w-4 rounded-full p-0 text-[10px]">
-                    {room.unreadCount}
-                  </Badge>
-                )}
-              </Button>
-            ))}
-            {!isCollapsed && (
-              <Button variant="ghost" className="w-full justify-start text-muted-foreground">
-                더보기...
-              </Button>
-            )}
-          </div>
-        </ScrollArea>
-
-        <div className="border-t p-4">
-          <div className="flex flex-col gap-2">
+    <div className={cn("pb-12", className)}>
+      <div className="space-y-4 py-4">
+        <div className="px-4 py-2">
+          <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">내 기도방</h2>
+          <div className="space-y-1">
             <Button
-              className="w-full"
-              variant="outline"
-              onClick={() => setShowCreateDialog(true)}
-              title={isCollapsed ? "새 기도방 생성" : undefined}
+              variant="secondary"
+              className="w-full justify-start"
+              onClick={() => setOpenCreateDialog(true)}
             >
-              <Plus className="h-4 w-4" />
-              {!isCollapsed && <span className="ml-2">새 기도방 생성</span>}
-            </Button>
-            <Button variant="ghost" className="w-full justify-start" asChild title={isCollapsed ? "설정" : undefined}>
-              <Link href="/settings">
-                <Settings className="h-4 w-4" />
-                {!isCollapsed && <span className="ml-2">설정</span>}
-              </Link>
+              <Plus className="mr-2 h-4 w-4" />
+              새 기도방 만들기
             </Button>
           </div>
+        </div>
+        <div className="px-4">
+          <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">참여 중인 기도방</h2>
+          {loading ? (
+            <div className="flex justify-center py-4">
+              <p className="text-sm text-muted-foreground">로딩 중...</p>
+            </div>
+          ) : rooms.length > 0 ? (
+            <ScrollArea className="h-[calc(100vh-12rem)]">
+              <div className="space-y-1">
+                {rooms.map((room) => (
+                  <Button
+                    key={room.room_id}
+                    variant={selectedRoomId === room.room_id ? "secondary" : "ghost"}
+                    className={cn(
+                      "w-full justify-start gap-1",
+                      selectedRoomId === room.room_id && "bg-accent"
+                    )}
+                    onClick={() => handleRoomClick(room.room_id)}
+                  >
+                    <div className="truncate">{room.title}</div>
+                    {room.role === "admin" && (
+                      <Badge variant="outline" className="ml-auto">관리자</Badge>
+                    )}
+                  </Button>
+                ))}
+              </div>
+            </ScrollArea>
+          ) : (
+            <div className="flex justify-center py-4">
+              <p className="text-sm text-muted-foreground">참여 중인 기도방이 없습니다</p>
+            </div>
+          )}
         </div>
       </div>
-
-      <CreatePrayerRoomDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
-    </>
+      
+      {/* 기도방 관리 다이얼로그는 선택된 기도방과 관리자 권한이 있을 때만 표시 */}
+      {selectedRoomId && (
+        <ManagePrayerRoomDialog 
+          open={openManageDialog} 
+          onOpenChange={setOpenManageDialog}
+          roomId={selectedRoomId}
+        />
+      )}
+      
+      {/* 기도방 생성 다이얼로그 */}
+      <CreatePrayerRoomDialog 
+        open={openCreateDialog} 
+        onOpenChange={setOpenCreateDialog} 
+      />
+    </div>
   )
 }

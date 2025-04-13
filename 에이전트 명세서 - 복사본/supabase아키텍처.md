@@ -95,8 +95,10 @@ markdown
     - users.ts                ✅ 유저 관련 fetch/insert 함수들
     - posts.ts                ✅ (예시) 게시글 관련 로직
 - components/
-  - UserList.tsx             ✅ 이 안에서는 supabase 모듈만 호출
-  - UserForm.tsx             ✅ 입력 폼도 마찬가지
+  - features/
+    - prayer-room/
+       ... 등                   ✅ 이 안에서는 supabase 모듈만 호출
+                                ✅ 입력 폼도 마찬가지
 ✨ 팁
 이 구조는 규모가 커져도 유지 보수가 쉬워.
 
