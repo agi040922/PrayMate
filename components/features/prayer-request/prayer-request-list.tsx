@@ -316,6 +316,7 @@ export function PrayerRequestList({
               </div>
             </CardContent>
             <CardFooter className="flex gap-2 p-2">
+
               <Button 
                 variant={userReactions[prayer.request_id]?.praying ? "default" : "outline"} 
                 size="sm" 
@@ -324,6 +325,7 @@ export function PrayerRequestList({
               >
                 <Heart className="mr-1 h-4 w-4" /> 기도하기
               </Button>
+              
               <Button
                 variant="outline"
                 size="sm"
