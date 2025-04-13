@@ -110,6 +110,7 @@ user_id UUID REFERENCES users(user_id) ON DELETE CASCADE,
 period_type VARCHAR(10) CHECK (period_type IN ('weekly', 'monthly', 'yearly')),
 period_label VARCHAR(20), -- 예: '2025-W15', '2025-04', '2025'
 content TEXT NOT NULL,
+is_completed BOOLEAN DEFAULT FALSE
 created_at TIMESTAMP DEFAULT now()
 );
 
