@@ -33,9 +33,11 @@ export default function ReportContainer() {
   // 필터 옵션
   const [roomId, setRoomId] = useState<string>('all')
   const [memberId, setMemberId] = useState<string>('all')
+  const [memberIds, setMemberIds] = useState<string[]>([])
   const [period, setPeriod] = useState<"all" | "weekly" | "monthly" | "yearly">("all")
   const [category, setCategory] = useState<string>("all")
   const [includePersonalPrayers, setIncludePersonalPrayers] = useState(false)
+  const [personalPrayerType, setPersonalPrayerType] = useState<"weekly" | "monthly" | "yearly">("weekly")
   
   // 필터 변경 시 기도제목 로드
   useEffect(() => {
@@ -51,7 +53,8 @@ export default function ReportContainer() {
         // 필터 옵션 구성
         const options: ReportFilterOptions = {
           roomId,
-          memberId,
+          memberId: memberIds.length > 0 ? 'selected' : memberId,
+          memberIds: memberIds.length > 0 ? memberIds : undefined,
           period,
           category
         }
@@ -63,12 +66,15 @@ export default function ReportContainer() {
         if (includePersonalPrayers) {
           try {
             // 개인 기도제목 로드
-            const personalNotes = await getPersonalPrayerNotesForReport(user.id, { period })
+            const personalNotes = await getPersonalPrayerNotesForReport(user.id, { 
+              period,
+              periodType: personalPrayerType
+            })
             
             // 개인 기도제목을 PrayerRequest 형태로 변환
             const personalPrayers: PrayerRequest[] = personalNotes.map(note => ({
               id: note.note_id,
-              title: `[개인] ${note.content.substring(0, 30)}${note.content.length > 30 ? '...' : ''}`,
+              title: `[개인 ${note.period_type === 'weekly' ? '주간' : note.period_type === 'monthly' ? '월간' : '연간'}] ${note.content.substring(0, 30)}${note.content.length > 30 ? '...' : ''}`,
               content: note.content,
               author: '나',
               authorId: user.id,
@@ -76,7 +82,9 @@ export default function ReportContainer() {
               date: new Date(note.created_at || '').toISOString().split('T')[0],
               status: note.is_completed ? 'answered' : 'praying',
               selected: false,
-              isPersonalNote: true // 구분을 위한 추가 필드
+              isPersonalNote: true, // 구분을 위한 추가 필드
+              periodType: note.period_type,
+              periodLabel: note.period_label
             }))
             
             // 기존 기도제목과 개인 기도제목 합치기
@@ -102,7 +110,7 @@ export default function ReportContainer() {
     }
 
     loadPrayerRequests()
-  }, [user, roomId, memberId, period, category, includePersonalPrayers, toast])
+  }, [user, roomId, memberId, memberIds, period, category, includePersonalPrayers, personalPrayerType, toast])
 
   // 필터링된 기도제목 목록
   const getFilteredPrayers = () => {
@@ -131,44 +139,105 @@ export default function ReportContainer() {
     report += `📅 ${periodText} 리포트 (${reportDate} 작성)\n\n`
 
     // 필터 정보 추가
-    report += `📌 필터: ${category === 'all' ? '모든 카테고리' : category}\n\n`
+    report += `📌 필터: ${category === 'all' ? '모든 카테고리' : category}\n`
+    if (includePersonalPrayers) {
+      report += `📔 개인 ${personalPrayerType === 'weekly' ? '주간' : personalPrayerType === 'monthly' ? '월간' : '연간'} 기도제목 포함\n`
+    }
+    report += '\n'
 
-    // 기도 중인 기도제목
-    const prayingItems = selectedItems.filter((item) => item.status === "praying" || item.status === null)
-    if (prayingItems.length > 0) {
-      report += "## 기도 중인 제목\n\n"
-      prayingItems.forEach((item) => {
-        report += `- ${item.title}\n`
-        report += `  ${item.content}\n`
-        if (item.bibleVerse) {
-          report += `  *${item.bibleVerse}*\n`
-        }
-        report += `  작성자: ${item.author} (${item.date})\n\n`
-      })
+    // 개인 기도제목과 공유 기도제목 분리
+    const personalItems = selectedItems.filter(item => item.isPersonalNote)
+    const sharedItems = selectedItems.filter(item => !item.isPersonalNote)
+
+    // 공유 기도제목
+    if (sharedItems.length > 0) {
+      report += "## 공유 기도제목\n\n"
+      
+      // 기도 중인 기도제목
+      const prayingItems = sharedItems.filter((item) => item.status === "praying" || item.status === null)
+      if (prayingItems.length > 0) {
+        report += "### 기도 중인 제목\n\n"
+        prayingItems.forEach((item) => {
+          report += `- ${item.title}\n`
+          report += `  ${item.content}\n`
+          if (item.bibleVerse) {
+            report += `  *${item.bibleVerse}*\n`
+          }
+          report += `  작성자: ${item.author} (${item.date})\n\n`
+        })
+      }
+
+      // 응답된 기도제목
+      const answeredItems = sharedItems.filter((item) => item.status === "answered")
+      if (answeredItems.length > 0) {
+        report += "### 응답된 기도제목\n\n"
+        answeredItems.forEach((item) => {
+          report += `- ${item.title}\n`
+          report += `  ${item.content}\n`
+          if (item.response) {
+            report += `  **응답:** ${item.response}\n`
+          }
+          if (item.bibleVerse) {
+            report += `  *${item.bibleVerse}*\n`
+          }
+          report += `  작성자: ${item.author} (${item.date})\n\n`
+        })
+      }
     }
 
-    // 응답된 기도제목
-    const answeredItems = selectedItems.filter((item) => item.status === "answered")
-    if (answeredItems.length > 0) {
-      report += "## 응답된 기도제목\n\n"
-      answeredItems.forEach((item) => {
-        report += `- ${item.title}\n`
-        report += `  ${item.content}\n`
-        if (item.response) {
-          report += `  **응답:** ${item.response}\n`
-        }
-        if (item.bibleVerse) {
-          report += `  *${item.bibleVerse}*\n`
-        }
-        report += `  작성자: ${item.author} (${item.date})\n\n`
-      })
+    // 개인 기도제목
+    if (personalItems.length > 0) {
+      report += "## 개인 기간별 기도제목\n\n"
+      
+      // 주간/월간/연간 기도제목 분류
+      const weeklyItems = personalItems.filter(item => item.periodType === 'weekly')
+      const monthlyItems = personalItems.filter(item => item.periodType === 'monthly')
+      const yearlyItems = personalItems.filter(item => item.periodType === 'yearly')
+      
+      // 주간 기도제목
+      if (weeklyItems.length > 0) {
+        report += "### 주간 기도제목\n\n"
+        weeklyItems.forEach((item) => {
+          report += `- ${item.content}\n`
+          report += `  기간: ${item.periodLabel}\n`
+          report += `  상태: ${item.status === 'answered' ? '✅ 응답됨' : '🙏 기도중'}\n\n`
+        })
+      }
+      
+      // 월간 기도제목
+      if (monthlyItems.length > 0) {
+        report += "### 월간 기도제목\n\n"
+        monthlyItems.forEach((item) => {
+          report += `- ${item.content}\n`
+          report += `  기간: ${item.periodLabel}\n`
+          report += `  상태: ${item.status === 'answered' ? '✅ 응답됨' : '🙏 기도중'}\n\n`
+        })
+      }
+      
+      // 연간 기도제목
+      if (yearlyItems.length > 0) {
+        report += "### 연간 기도제목\n\n"
+        yearlyItems.forEach((item) => {
+          report += `- ${item.content}\n`
+          report += `  기간: ${item.periodLabel}\n`
+          report += `  상태: ${item.status === 'answered' ? '✅ 응답됨' : '🙏 기도중'}\n\n`
+        })
+      }
     }
 
     // 통계 추가
     report += "## 기도제목 통계\n\n"
     report += `- 총 기도제목: ${selectedItems.length}개\n`
-    report += `- 기도 중인 제목: ${prayingItems.length}개\n`
-    report += `- 응답된 기도제목: ${answeredItems.length}개\n`
+    if (sharedItems.length > 0) {
+      const prayingShared = sharedItems.filter(item => item.status === "praying" || item.status === null).length
+      const answeredShared = sharedItems.filter(item => item.status === "answered").length
+      report += `- 공유 기도제목: ${sharedItems.length}개 (기도중: ${prayingShared}개, 응답됨: ${answeredShared}개)\n`
+    }
+    if (personalItems.length > 0) {
+      const prayingPersonal = personalItems.filter(item => item.status === "praying" || item.status === null).length
+      const answeredPersonal = personalItems.filter(item => item.status === "answered").length
+      report += `- 개인 기도제목: ${personalItems.length}개 (기도중: ${prayingPersonal}개, 응답됨: ${answeredPersonal}개)\n`
+    }
     
     setReportText(report)
   }
@@ -252,10 +321,16 @@ export default function ReportContainer() {
         onRoomChange={setRoomId}
         memberId={memberId}
         onMemberChange={setMemberId}
+        memberIds={memberIds}
+        onMemberIdsChange={setMemberIds}
         category={category}
         onCategoryChange={setCategory}
         period={period}
         onPeriodChange={setPeriod}
+        includePersonalPrayers={includePersonalPrayers}
+        onIncludePersonalPrayersChange={setIncludePersonalPrayers}
+        personalPrayerType={personalPrayerType}
+        onPersonalPrayerTypeChange={setPersonalPrayerType}
       />
     </div>
   )

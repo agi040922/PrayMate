@@ -13,12 +13,16 @@ export interface PrayerRequest {
   status: "praying" | "answered" | null
   response?: string
   selected?: boolean
+  isPersonalNote?: boolean
+  periodType?: "weekly" | "monthly" | "yearly"
+  periodLabel?: string
 }
 
 // 필터링 옵션 인터페이스
 export interface ReportFilterOptions {
   roomId?: string | 'all'
-  memberId?: string | 'all'
+  memberId?: string | 'all' | 'selected'
+  memberIds?: string[]
   period: "all" | "weekly" | "monthly" | "yearly"
   category: string | 'all'
 }
@@ -102,7 +106,11 @@ export async function getFilteredPrayerRequests(
   }
 
   // 멤버 필터링
-  if (options.memberId && options.memberId !== 'all') {
+  if (options.memberId === 'selected' && options.memberIds && options.memberIds.length > 0) {
+    // 선택된 멤버들의 기도제목 조회
+    query = query.in('user_id', options.memberIds)
+  } else if (options.memberId && options.memberId !== 'all' && options.memberId !== 'selected') {
+    // 단일 멤버의 기도제목 조회
     query = query.eq('user_id', options.memberId)
   }
 
@@ -150,7 +158,8 @@ export async function getFilteredPrayerRequests(
     date: new Date(item.created_at).toISOString().split('T')[0],
     status: item.is_answered ? 'answered' : 'praying',
     response: undefined, // 응답 내용 (필요 시 별도 쿼리 필요)
-    selected: false
+    selected: false,
+    isPersonalNote: false
   }))
 
   return formattedData
@@ -163,16 +172,36 @@ export async function getPersonalPrayerNotesForReport(
   userId: string,
   options: {
     period: "all" | "weekly" | "monthly" | "yearly"
+    periodType?: "weekly" | "monthly" | "yearly"
   }
 ) {
   let query = supabase
     .from('personal_prayer_notes')
     .select('*')
     .eq('user_id', userId)
-    
-  // 기간으로 필터링
+  
+  // 특정 기간 타입 필터링 (주간, 월간, 연간)
+  if (options.periodType) {
+    query = query.eq('period_type', options.periodType)
+  }
+  
+  // 기간으로 필터링 (최근 주간, 월간, 연간)
   if (options.period !== 'all') {
-    query = query.eq('period_type', options.period)
+    const now = new Date()
+    let startDate = new Date()
+
+    switch (options.period) {
+      case 'weekly':
+        startDate.setDate(now.getDate() - 7)
+        break
+      case 'monthly':
+        startDate.setMonth(now.getMonth() - 1)
+        break
+      case 'yearly':
+        startDate.setFullYear(now.getFullYear() - 1)
+        break
+    }
+    query = query.gte('created_at', startDate.toISOString())
   }
   
   const { data, error } = await query.order('created_at', { ascending: false })

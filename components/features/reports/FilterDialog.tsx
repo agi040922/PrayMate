@@ -15,6 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton"
 import { useAuth } from "@/lib/context/AuthContext"
 import { getUserPrayerRoomsForFilter, getRoomMembersForFilter } from "@/lib/supabase/reports"
+import { Checkbox } from "@/components/ui/checkbox"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Switch } from "@/components/ui/switch"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface FilterDialogProps {
   open: boolean
@@ -23,10 +27,16 @@ interface FilterDialogProps {
   onRoomChange: (value: string) => void
   memberId: string
   onMemberChange: (value: string) => void
+  memberIds?: string[]
+  onMemberIdsChange?: (value: string[]) => void
   category: string
   onCategoryChange: (value: string) => void
   period: "all" | "weekly" | "monthly" | "yearly"
   onPeriodChange: (value: "all" | "weekly" | "monthly" | "yearly") => void
+  includePersonalPrayers: boolean
+  onIncludePersonalPrayersChange: (value: boolean) => void
+  personalPrayerType: "weekly" | "monthly" | "yearly"
+  onPersonalPrayerTypeChange: (value: "weekly" | "monthly" | "yearly") => void
 }
 
 export default function FilterDialog({
@@ -36,16 +46,23 @@ export default function FilterDialog({
   onRoomChange,
   memberId,
   onMemberChange,
+  memberIds = [],
+  onMemberIdsChange = () => {},
   category,
   onCategoryChange,
   period,
-  onPeriodChange
+  onPeriodChange,
+  includePersonalPrayers,
+  onIncludePersonalPrayersChange,
+  personalPrayerType,
+  onPersonalPrayerTypeChange
 }: FilterDialogProps) {
   const { user } = useAuth()
   const [rooms, setRooms] = useState<{room_id: string, title: string}[]>([])
   const [members, setMembers] = useState<{user_id: string, name: string}[]>([])
   const [loadingRooms, setLoadingRooms] = useState(false)
   const [loadingMembers, setLoadingMembers] = useState(false)
+  const [selectedMembers, setSelectedMembers] = useState<string[]>(memberIds)
 
   // 사용자의 기도방 목록 로드
   useEffect(() => {
@@ -92,15 +109,48 @@ export default function FilterDialog({
     }
   }, [roomId, open])
 
+  // memberIds가 변경될 때 selectedMembers 업데이트
+  useEffect(() => {
+    setSelectedMembers(memberIds);
+  }, [memberIds]);
+
   // 기도방 변경시 구성원 선택 초기화
   const handleRoomChange = (value: string) => {
     onRoomChange(value)
-    onMemberChange('all') // 방이 변경되면 멤버는 '전체'로 초기화
+    onMemberChange('all')
+    setSelectedMembers([])
+    onMemberIdsChange([])
+  }
+
+  // 구성원 선택 토글
+  const toggleMember = (userId: string) => {
+    let updatedMembers: string[];
+    
+    if (selectedMembers.includes(userId)) {
+      updatedMembers = selectedMembers.filter(id => id !== userId);
+    } else {
+      updatedMembers = [...selectedMembers, userId];
+    }
+    
+    setSelectedMembers(updatedMembers);
+    onMemberIdsChange(updatedMembers);
+  }
+
+  // 구성원 전체 선택 / 해제
+  const toggleAll = (checked: boolean) => {
+    if (checked) {
+      const allMemberIds = members.map(member => member.user_id);
+      setSelectedMembers(allMemberIds);
+      onMemberIdsChange(allMemberIds);
+    } else {
+      setSelectedMembers([]);
+      onMemberIdsChange([]);
+    }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>리포트 필터 설정</DialogTitle>
           <DialogDescription>리포트에 포함할 기도제목을 필터링하세요</DialogDescription>
@@ -128,32 +178,50 @@ export default function FilterDialog({
             )}
           </div>
 
-          {/* 구성원 선택 */}
+          {/* 구성원 선택 - 체크박스 목록으로 변경 */}
           <div className="grid gap-2">
-            <Label htmlFor="member">구성원</Label>
+            <div className="flex items-center justify-between">
+              <Label>구성원</Label>
+              {members.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <Checkbox 
+                    id="select-all-members"
+                    checked={members.length > 0 && selectedMembers.length === members.length}
+                    onCheckedChange={toggleAll}
+                    disabled={roomId === 'all' || !members.length}
+                  />
+                  <Label htmlFor="select-all-members" className="text-xs">전체 선택</Label>
+                </div>
+              )}
+            </div>
+            
             {loadingMembers ? (
-              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-20 w-full" />
             ) : (
-              <Select 
-                value={memberId} 
-                onValueChange={onMemberChange}
-                disabled={roomId === 'all' || !members.length}
-              >
-                <SelectTrigger id="member">
-                  <SelectValue placeholder="구성원 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">모든 구성원</SelectItem>
-                  {members.map((member) => (
-                    <SelectItem key={member.user_id} value={member.user_id}>
-                      {member.name || '이름 없음'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            {roomId === 'all' && (
-              <p className="text-xs text-muted-foreground">기도방을 선택하면 구성원을 필터링할 수 있습니다.</p>
+              roomId !== 'all' && members.length > 0 ? (
+                <ScrollArea className="h-32 rounded-md border p-2">
+                  <div className="space-y-2">
+                    {members.map((member) => (
+                      <div key={member.user_id} className="flex items-center gap-2">
+                        <Checkbox 
+                          id={`member-${member.user_id}`}
+                          checked={selectedMembers.includes(member.user_id)}
+                          onCheckedChange={() => toggleMember(member.user_id)}
+                        />
+                        <Label htmlFor={`member-${member.user_id}`} className="text-sm">
+                          {member.name || '이름 없음'}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  {roomId === 'all' 
+                    ? '기도방을 선택하면 구성원을 필터링할 수 있습니다.' 
+                    : '이 기도방에는 구성원이 없습니다.'}
+                </p>
+              )
             )}
           </div>
 
@@ -188,6 +256,31 @@ export default function FilterDialog({
                 <SelectItem value="intercession">중보기도</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* 개인 기간별 기도제목 포함 옵션 */}
+          <div className="grid gap-2 border-t pt-4 mt-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="include-personal-prayers">내 기간별 기도제목 포함</Label>
+              <Switch 
+                id="include-personal-prayers" 
+                checked={includePersonalPrayers}
+                onCheckedChange={onIncludePersonalPrayersChange}
+              />
+            </div>
+            
+            {includePersonalPrayers && (
+              <div className="mt-2">
+                <Label className="mb-2 block text-sm">기간별 기도제목 타입</Label>
+                <Tabs value={personalPrayerType} onValueChange={v => onPersonalPrayerTypeChange(v as any)} className="w-full">
+                  <TabsList className="grid grid-cols-3 w-full">
+                    <TabsTrigger value="weekly">주간</TabsTrigger>
+                    <TabsTrigger value="monthly">월간</TabsTrigger>
+                    <TabsTrigger value="yearly">연간</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+            )}
           </div>
         </div>
         <DialogFooter>
