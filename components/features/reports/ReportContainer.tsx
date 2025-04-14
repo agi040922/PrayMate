@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ArrowLeft, Filter, Clock, Calendar, CalendarDays } from "lucide-react"
+import { ArrowLeft, Filter, Clock, Calendar, CalendarDays, FileText, BookOpen } from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/components/ui/use-toast"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 
 import PrayerSelection from "./PrayerSelection"
 import ReportPreview from "./ReportPreview"
@@ -38,6 +40,7 @@ export default function ReportContainer() {
   const [category, setCategory] = useState<string>("all")
   const [includePersonalPrayers, setIncludePersonalPrayers] = useState(false)
   const [personalPrayerType, setPersonalPrayerType] = useState<"weekly" | "monthly" | "yearly">("weekly")
+  const [onlyPeriodPrayers, setOnlyPeriodPrayers] = useState(false)
   
   // 필터 변경 시 기도제목 로드
   useEffect(() => {
@@ -56,19 +59,21 @@ export default function ReportContainer() {
           memberId: memberIds.length > 0 ? 'selected' : memberId,
           memberIds: memberIds.length > 0 ? memberIds : undefined,
           period,
-          category
+          category,
+          onlyPeriodPrayers, // 기간별 기도제목만 보기 옵션
         }
         
         // 기도제목 로드
         const data = await getFilteredPrayerRequests(user.id, options)
         
-        // 개인 기도제목 포함 여부
-        if (includePersonalPrayers) {
+        // 개인 기도제목 포함 여부 (onlyPeriodPrayers가 true면 이미 포함되어 있음)
+        if (!onlyPeriodPrayers && includePersonalPrayers) {
           try {
             // 개인 기도제목 로드
             const personalNotes = await getPersonalPrayerNotesForReport(user.id, { 
               period,
-              periodType: personalPrayerType
+              periodType: personalPrayerType,
+              onlyMine: true
             })
             
             // 개인 기도제목을 PrayerRequest 형태로 변환
@@ -82,7 +87,7 @@ export default function ReportContainer() {
               date: new Date(note.created_at || '').toISOString().split('T')[0],
               status: note.is_completed ? 'answered' : 'praying',
               selected: false,
-              isPersonalNote: true, // 구분을 위한 추가 필드
+              isPersonalNote: true,
               periodType: note.period_type,
               periodLabel: note.period_label
             }))
@@ -110,7 +115,7 @@ export default function ReportContainer() {
     }
 
     loadPrayerRequests()
-  }, [user, roomId, memberId, memberIds, period, category, includePersonalPrayers, personalPrayerType, toast])
+  }, [user, roomId, memberId, memberIds, period, category, includePersonalPrayers, personalPrayerType, onlyPeriodPrayers, toast])
 
   // 필터링된 기도제목 목록
   const getFilteredPrayers = () => {
@@ -139,9 +144,13 @@ export default function ReportContainer() {
     report += `📅 ${periodText} 리포트 (${reportDate} 작성)\n\n`
 
     // 필터 정보 추가
-    report += `📌 필터: ${category === 'all' ? '모든 카테고리' : category}\n`
-    if (includePersonalPrayers) {
-      report += `📔 개인 ${personalPrayerType === 'weekly' ? '주간' : personalPrayerType === 'monthly' ? '월간' : '연간'} 기도제목 포함\n`
+    if (onlyPeriodPrayers) {
+      report += `📌 기간별 기도제목만 표시\n`
+    } else {
+      report += `📌 필터: ${category === 'all' ? '모든 카테고리' : category}\n`
+      if (includePersonalPrayers) {
+        report += `📔 개인 ${personalPrayerType === 'weekly' ? '주간' : personalPrayerType === 'monthly' ? '월간' : '연간'} 기도제목 포함\n`
+      }
     }
     report += '\n'
 
@@ -187,7 +196,7 @@ export default function ReportContainer() {
 
     // 개인 기도제목
     if (personalItems.length > 0) {
-      report += "## 개인 기간별 기도제목\n\n"
+      report += "## 기간별 기도제목\n\n"
       
       // 주간/월간/연간 기도제목 분류
       const weeklyItems = personalItems.filter(item => item.periodType === 'weekly')
@@ -198,8 +207,9 @@ export default function ReportContainer() {
       if (weeklyItems.length > 0) {
         report += "### 주간 기도제목\n\n"
         weeklyItems.forEach((item) => {
-          report += `- ${item.content}\n`
+          report += `- ${item.title.includes('[내 주간') ? item.content : item.title}\n`
           report += `  기간: ${item.periodLabel}\n`
+          report += `  작성자: ${item.author}\n`
           report += `  상태: ${item.status === 'answered' ? '✅ 응답됨' : '🙏 기도중'}\n\n`
         })
       }
@@ -208,8 +218,9 @@ export default function ReportContainer() {
       if (monthlyItems.length > 0) {
         report += "### 월간 기도제목\n\n"
         monthlyItems.forEach((item) => {
-          report += `- ${item.content}\n`
+          report += `- ${item.title.includes('[내 월간') ? item.content : item.title}\n`
           report += `  기간: ${item.periodLabel}\n`
+          report += `  작성자: ${item.author}\n`
           report += `  상태: ${item.status === 'answered' ? '✅ 응답됨' : '🙏 기도중'}\n\n`
         })
       }
@@ -218,8 +229,9 @@ export default function ReportContainer() {
       if (yearlyItems.length > 0) {
         report += "### 연간 기도제목\n\n"
         yearlyItems.forEach((item) => {
-          report += `- ${item.content}\n`
+          report += `- ${item.title.includes('[내 연간') ? item.content : item.title}\n`
           report += `  기간: ${item.periodLabel}\n`
+          report += `  작성자: ${item.author}\n`
           report += `  상태: ${item.status === 'answered' ? '✅ 응답됨' : '🙏 기도중'}\n\n`
         })
       }
@@ -236,7 +248,7 @@ export default function ReportContainer() {
     if (personalItems.length > 0) {
       const prayingPersonal = personalItems.filter(item => item.status === "praying" || item.status === null).length
       const answeredPersonal = personalItems.filter(item => item.status === "answered").length
-      report += `- 개인 기도제목: ${personalItems.length}개 (기도중: ${prayingPersonal}개, 응답됨: ${answeredPersonal}개)\n`
+      report += `- 기간별 기도제목: ${personalItems.length}개 (기도중: ${prayingPersonal}개, 응답됨: ${answeredPersonal}개)\n`
     }
     
     setReportText(report)
@@ -262,24 +274,41 @@ export default function ReportContainer() {
         </Button>
       </div>
 
-      {/* 리포트 타입 선택 탭 */}
-      <Tabs defaultValue={period} onValueChange={(value) => setPeriod(value as any)} className="mb-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="all">전체</TabsTrigger>
-          <TabsTrigger value="weekly">
-            <Clock className="mr-2 h-4 w-4" />
-            주간
-          </TabsTrigger>
-          <TabsTrigger value="monthly">
-            <Calendar className="mr-2 h-4 w-4" />
-            월간
-          </TabsTrigger>
-          <TabsTrigger value="yearly">
-            <CalendarDays className="mr-2 h-4 w-4" />
-            연간
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {/* 기도제목 타입 선택 */}
+      <div className="mb-6 space-y-4">
+        <div className="flex justify-between items-center">
+          <Label htmlFor="view-type" className="text-base font-medium">기도제목 타입</Label>
+          <div className="flex items-center gap-2">
+            <Switch 
+              id="view-type" 
+              checked={onlyPeriodPrayers}
+              onCheckedChange={setOnlyPeriodPrayers}
+            />
+            <Label htmlFor="view-type" className="text-sm">
+              {onlyPeriodPrayers ? '기간별 기도제목만 보기' : '모든 기도제목 보기'}
+            </Label>
+          </div>
+        </div>
+
+        {/* 리포트 타입 선택 탭 */}
+        <Tabs defaultValue={period} onValueChange={(value) => setPeriod(value as any)}>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="all">전체</TabsTrigger>
+            <TabsTrigger value="weekly">
+              <Clock className="mr-2 h-4 w-4" />
+              주간
+            </TabsTrigger>
+            <TabsTrigger value="monthly">
+              <Calendar className="mr-2 h-4 w-4" />
+              월간
+            </TabsTrigger>
+            <TabsTrigger value="yearly">
+              <CalendarDays className="mr-2 h-4 w-4" />
+              연간
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
       {/* 기도제목 선택 및 리포트 영역 */}
       <div className="mb-6 grid gap-6 md:grid-cols-2">
@@ -300,13 +329,30 @@ export default function ReportContainer() {
               ))}
             </div>
           </div>
-        ) : (
+        ) : selectedPrayers.length > 0 ? (
           <PrayerSelection
             prayers={selectedPrayers}
             onPrayerSelectionChange={setSelectedPrayers}
             onGenerateReport={generateReport}
             filteredPrayers={getFilteredPrayers}
           />
+        ) : (
+          <div className="flex flex-col items-center justify-center h-64 border rounded-md p-6 text-center">
+            <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">
+              {onlyPeriodPrayers 
+                ? '기간별 기도제목이 없습니다'
+                : '기도제목이 없습니다'}
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              {onlyPeriodPrayers 
+                ? '선택한 필터에 맞는 기간별 기도제목이 없습니다.'
+                : '선택한 필터에 맞는 기도제목이 없습니다.'}
+            </p>
+            <Button variant="outline" onClick={() => setShowFilterDialog(true)}>
+              필터 변경하기
+            </Button>
+          </div>
         )}
 
         {/* 리포트 미리보기 및 다운로드 */}
@@ -331,6 +377,8 @@ export default function ReportContainer() {
         onIncludePersonalPrayersChange={setIncludePersonalPrayers}
         personalPrayerType={personalPrayerType}
         onPersonalPrayerTypeChange={setPersonalPrayerType}
+        onlyPeriodPrayers={onlyPeriodPrayers}
+        onOnlyPeriodPrayersChange={setOnlyPeriodPrayers}
       />
     </div>
   )

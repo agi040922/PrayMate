@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabaseClient"
+import { Database } from '@/types/supabase'
 
 // 기도제목 타입 정의 (PrayerSelection 컴포넌트 타입과 호환)
 export interface PrayerRequest {
@@ -18,6 +19,20 @@ export interface PrayerRequest {
   periodLabel?: string
 }
 
+// 개인 기간별 기도제목 타입
+export interface PersonalPrayerNote {
+  note_id: string
+  user_id: string
+  period_type: "weekly" | "monthly" | "yearly"
+  period_label: string
+  content: string
+  is_completed: boolean
+  created_at?: string
+  is_public?: boolean
+  users?: { name: string } | null
+  user_name?: string
+}
+
 // 필터링 옵션 인터페이스
 export interface ReportFilterOptions {
   roomId?: string | 'all'
@@ -25,12 +40,13 @@ export interface ReportFilterOptions {
   memberIds?: string[]
   period: "all" | "weekly" | "monthly" | "yearly"
   category: string | 'all'
+  onlyPeriodPrayers?: boolean // 기간별 기도제목만 볼지 여부
 }
 
 /**
  * 필터링에 사용할 사용자의 기도방 목록 조회 (간략 정보)
  */
-export async function getUserPrayerRoomsForFilter(userId: string) {
+export async function getUserPrayerRoomsForFilter(userId: string): Promise<{ room_id: string; title: string }[]> {
   const { data, error } = await supabase
     .from('room_participants')
     .select('prayer_rooms(room_id, title)')
@@ -41,14 +57,25 @@ export async function getUserPrayerRoomsForFilter(userId: string) {
     throw error
   }
 
-  // 중첩된 구조 해제
-  return data.map(item => item.prayer_rooms).filter(room => room !== null)
+  // 중첩된 구조 해제 및 타입 변환
+  const rooms: { room_id: string; title: string }[] = []
+  
+  data.forEach(item => {
+    if (item.prayer_rooms) {
+      rooms.push({
+        room_id: item.prayer_rooms.room_id,
+        title: item.prayer_rooms.title
+      })
+    }
+  })
+
+  return rooms
 }
 
 /**
  * 필터링에 사용할 특정 기도방의 멤버 목록 조회 (간략 정보)
  */
-export async function getRoomMembersForFilter(roomId: string) {
+export async function getRoomMembersForFilter(roomId: string): Promise<{ user_id: string; name: string }[]> {
   const { data, error } = await supabase
     .from('room_participants')
     .select('users(user_id, name)')
@@ -59,8 +86,19 @@ export async function getRoomMembersForFilter(roomId: string) {
     throw error
   }
 
-  // 중첩된 구조 해제
-  return data.map(item => item.users).filter(user => user !== null)
+  // 중첩된 구조 해제 및 타입 변환
+  const members: { user_id: string; name: string }[] = []
+  
+  data.forEach(item => {
+    if (item.users) {
+      members.push({
+        user_id: item.users.user_id,
+        name: item.users.name || '이름 없음'
+      })
+    }
+  })
+
+  return members
 }
 
 /**
@@ -70,6 +108,11 @@ export async function getFilteredPrayerRequests(
   userId: string,
   options: ReportFilterOptions
 ): Promise<PrayerRequest[]> {
+  // 기간별 기도제목만 볼 경우 해당 함수에서 처리
+  if (options.onlyPeriodPrayers) {
+    return getFilteredPeriodPrayers(userId, options)
+  }
+
   let query = supabase
     .from('prayer_requests')
     .select(`
@@ -166,23 +209,156 @@ export async function getFilteredPrayerRequests(
 }
 
 /**
- * 개인 기도 노트를 포함한 리포트 데이터 조회
+ * 기간별 기도제목만 필터링해서 가져오는 함수
+ */
+export async function getFilteredPeriodPrayers(
+  userId: string,
+  options: ReportFilterOptions
+): Promise<PrayerRequest[]> {
+  // 자신의 기간별 기도제목 가져오기
+  const myPeriodPrayers = await getPersonalPrayerNotesForReport(userId, {
+    period: options.period,
+    periodType: 'all', // 모든 유형(주간/월간/연간) 가져오기
+    onlyMine: true
+  });
+
+  // 다른 사람들의 기간별 기도제목 가져오기
+  let othersPeriodPrayers: PersonalPrayerNote[] = [];
+  
+  // 특정 기도방 선택 시 해당 방의 구성원들의 기도제목 가져오기
+  if (options.roomId && options.roomId !== 'all') {
+    let memberFilter: string[] = [];
+    
+    // 선택된 멤버가 있는 경우
+    if (options.memberId === 'selected' && options.memberIds && options.memberIds.length > 0) {
+      memberFilter = options.memberIds;
+    }
+    // 특정 멤버 선택한 경우
+    else if (options.memberId && options.memberId !== 'all' && options.memberId !== 'selected') {
+      memberFilter = [options.memberId];
+    }
+    
+    othersPeriodPrayers = await getPersonalPrayerNotesForReport(userId, {
+      period: options.period,
+      periodType: 'all', // 모든 유형(주간/월간/연간) 가져오기
+      roomId: options.roomId,
+      memberIds: memberFilter.length > 0 ? memberFilter : undefined,
+      onlyMine: false
+    });
+  }
+  
+  // 개인 기도제목 PrayerRequest 형태로 변환
+  const myFormattedPrayers: PrayerRequest[] = myPeriodPrayers.map((note: PersonalPrayerNote) => ({
+    id: note.note_id,
+    title: `[내 ${note.period_type === 'weekly' ? '주간' : note.period_type === 'monthly' ? '월간' : '연간'}] ${note.content.substring(0, 30)}${note.content.length > 30 ? '...' : ''}`,
+    content: note.content,
+    author: '나',
+    authorId: userId,
+    category: '개인',
+    date: new Date(note.created_at || '').toISOString().split('T')[0],
+    status: note.is_completed ? 'answered' : 'praying',
+    selected: false,
+    isPersonalNote: true,
+    periodType: note.period_type,
+    periodLabel: note.period_label
+  }));
+  
+  // 다른 사람들의 기도제목 PrayerRequest 형태로 변환
+  const othersFormattedPrayers: PrayerRequest[] = othersPeriodPrayers.map((note: PersonalPrayerNote) => ({
+    id: note.note_id,
+    title: `[${note.user_name || '익명'} - ${note.period_type === 'weekly' ? '주간' : note.period_type === 'monthly' ? '월간' : '연간'}] ${note.content.substring(0, 30)}${note.content.length > 30 ? '...' : ''}`,
+    content: note.content,
+    author: note.user_name || '익명',
+    authorId: note.user_id,
+    category: '기간별',
+    date: new Date(note.created_at || '').toISOString().split('T')[0],
+    status: note.is_completed ? 'answered' : 'praying',
+    selected: false,
+    isPersonalNote: true,
+    periodType: note.period_type,
+    periodLabel: note.period_label
+  }));
+
+  // 모든 기도제목 합치기 (내 기도제목 제외, 다른 사람의 기도제목만 반환)
+  return othersFormattedPrayers;
+}
+
+/**
+ * 개인 기간별 기도제목 조회 (자신 및 다른 사용자의 기도제목 포함 가능)
  */
 export async function getPersonalPrayerNotesForReport(
   userId: string,
   options: {
     period: "all" | "weekly" | "monthly" | "yearly"
-    periodType?: "weekly" | "monthly" | "yearly"
+    periodType?: "all" | "weekly" | "monthly" | "yearly"
+    roomId?: string
+    memberIds?: string[]
+    onlyMine?: boolean // true면 자신의 기도제목만, false면 다른 사람 것도 포함
   }
-) {
-  let query = supabase
-    .from('personal_prayer_notes')
-    .select('*')
-    .eq('user_id', userId)
+): Promise<PersonalPrayerNote[]> {
+  let query;
   
-  // 특정 기간 타입 필터링 (주간, 월간, 연간)
-  if (options.periodType) {
-    query = query.eq('period_type', options.periodType)
+  // 자신의 기도제목만 가져오는 경우
+  if (options.onlyMine) {
+    query = supabase
+      .from('personal_prayer_notes')
+      .select('*')
+      .eq('user_id', userId);
+  } 
+  // 특정 방의 기도제목 가져오는 경우 (다른 사람 것도 포함)
+  else if (options.roomId) {
+    // 사용자 정보를 같이 가져오기 위해 조인
+    query = supabase
+      .from('personal_prayer_notes')
+      .select(`
+        note_id,
+        user_id,
+        period_type,
+        period_label,
+        content, 
+        is_completed,
+        created_at,
+        is_public,
+        users (
+          name
+        )
+      `);
+    
+    // 방 참여자 정보 가져오기
+    const { data: participants, error: participantsError } = await supabase
+      .from('room_participants')
+      .select('user_id')
+      .eq('room_id', options.roomId);
+    
+    if (participantsError) {
+      console.error("Error fetching room participants:", participantsError);
+      throw participantsError;
+    }
+    
+    // 방 참여자 ID 목록
+    const participantIds = participants.map(p => p.user_id);
+    
+    // 특정 멤버만 필터링하는 경우
+    if (options.memberIds && options.memberIds.length > 0) {
+      const validMemberIds = options.memberIds.filter(id => participantIds.includes(id));
+      query = query.in('user_id', validMemberIds);
+    } else {
+      // 모든 방 참여자의 기도제목
+      query = query.in('user_id', participantIds);
+    }
+    
+    // 공개된 기도제목만 가져오기 (자신의 것은 모두 가져오기)
+    query = query.or(`user_id.eq.${userId},is_public.eq.true`);
+  } else {
+    // 기본 쿼리
+    query = supabase
+      .from('personal_prayer_notes')
+      .select('*');
+  }
+  
+  // 특정 기간 타입 필터링 (주간/월간/연간)
+  if (options.periodType && options.periodType !== 'all') {
+    query = query.eq('period_type', options.periodType);
   }
   
   // 기간으로 필터링 (최근 주간, 월간, 연간)
@@ -204,14 +380,18 @@ export async function getPersonalPrayerNotesForReport(
     query = query.gte('created_at', startDate.toISOString())
   }
   
-  const { data, error } = await query.order('created_at', { ascending: false })
+  const { data, error } = await query.order('created_at', { ascending: false });
   
   if (error) {
-    console.error("Error fetching personal prayer notes:", error)
-    throw error
+    console.error("Error fetching personal prayer notes:", error);
+    throw error;
   }
   
-  return data
+  // 사용자 이름 추가
+  return data.map(note => ({
+    ...note,
+    user_name: note.users?.name || null
+  }));
 }
 
 /**

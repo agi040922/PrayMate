@@ -37,6 +37,8 @@ interface FilterDialogProps {
   onIncludePersonalPrayersChange: (value: boolean) => void
   personalPrayerType: "weekly" | "monthly" | "yearly"
   onPersonalPrayerTypeChange: (value: "weekly" | "monthly" | "yearly") => void
+  onlyPeriodPrayers: boolean
+  onOnlyPeriodPrayersChange: (value: boolean) => void
 }
 
 export default function FilterDialog({
@@ -55,7 +57,9 @@ export default function FilterDialog({
   includePersonalPrayers,
   onIncludePersonalPrayersChange,
   personalPrayerType,
-  onPersonalPrayerTypeChange
+  onPersonalPrayerTypeChange,
+  onlyPeriodPrayers,
+  onOnlyPeriodPrayersChange
 }: FilterDialogProps) {
   const { user } = useAuth()
   const [rooms, setRooms] = useState<{room_id: string, title: string}[]>([])
@@ -72,7 +76,7 @@ export default function FilterDialog({
       try {
         setLoadingRooms(true)
         const roomData = await getUserPrayerRoomsForFilter(user.id)
-        setRooms(roomData)
+        setRooms(roomData as any) // 타입 오류 임시 해결
       } catch (error) {
         console.error("기도방 목록 로딩 실패:", error)
       } finally {
@@ -96,7 +100,7 @@ export default function FilterDialog({
       try {
         setLoadingMembers(true)
         const memberData = await getRoomMembersForFilter(roomId)
-        setMembers(memberData)
+        setMembers(memberData as any) // 타입 오류 임시 해결
       } catch (error) {
         console.error("기도방 구성원 로딩 실패:", error)
       } finally {
@@ -148,6 +152,16 @@ export default function FilterDialog({
     }
   }
 
+  // 기간별 기도제목만 보기 토글 처리
+  const handleOnlyPeriodPrayersChange = (value: boolean) => {
+    onOnlyPeriodPrayersChange(value);
+    
+    // 기간별 기도제목만 보기 활성화 시 개인 기도제목 포함 옵션 비활성화
+    if (value && includePersonalPrayers) {
+      onIncludePersonalPrayersChange(false);
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
@@ -156,6 +170,21 @@ export default function FilterDialog({
           <DialogDescription>리포트에 포함할 기도제목을 필터링하세요</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          {/* 기도제목 타입 선택 */}
+          <div className="grid gap-2 border-b pb-4">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="only-period-prayers">기간별 기도제목만 보기</Label>
+              <Switch 
+                id="only-period-prayers" 
+                checked={onlyPeriodPrayers}
+                onCheckedChange={handleOnlyPeriodPrayersChange}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              활성화하면 공유 기도제목은 표시되지 않고 기간별 기도제목만 표시됩니다.
+            </p>
+          </div>
+
           {/* 기도방 선택 */}
           <div className="grid gap-2">
             <Label htmlFor="prayer-room">기도방</Label>
@@ -241,47 +270,51 @@ export default function FilterDialog({
             </Select>
           </div>
 
-          {/* 카테고리 선택 */}
-          <div className="grid gap-2">
-            <Label htmlFor="category">카테고리</Label>
-            <Select value={category} onValueChange={onCategoryChange}>
-              <SelectTrigger id="category">
-                <SelectValue placeholder="카테고리 선택" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">모든 카테고리</SelectItem>
-                <SelectItem value="personal">개인</SelectItem>
-                <SelectItem value="community">공동체</SelectItem>
-                <SelectItem value="thanksgiving">감사</SelectItem>
-                <SelectItem value="intercession">중보기도</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* 개인 기간별 기도제목 포함 옵션 */}
-          <div className="grid gap-2 border-t pt-4 mt-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="include-personal-prayers">내 기간별 기도제목 포함</Label>
-              <Switch 
-                id="include-personal-prayers" 
-                checked={includePersonalPrayers}
-                onCheckedChange={onIncludePersonalPrayersChange}
-              />
+          {/* 카테고리 선택 - 기간별 기도제목만 보기 옵션이 활성화되지 않은 경우에만 표시 */}
+          {!onlyPeriodPrayers && (
+            <div className="grid gap-2">
+              <Label htmlFor="category">카테고리</Label>
+              <Select value={category} onValueChange={onCategoryChange}>
+                <SelectTrigger id="category">
+                  <SelectValue placeholder="카테고리 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">모든 카테고리</SelectItem>
+                  <SelectItem value="personal">개인</SelectItem>
+                  <SelectItem value="community">공동체</SelectItem>
+                  <SelectItem value="thanksgiving">감사</SelectItem>
+                  <SelectItem value="intercession">중보기도</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            
-            {includePersonalPrayers && (
-              <div className="mt-2">
-                <Label className="mb-2 block text-sm">기간별 기도제목 타입</Label>
-                <Tabs value={personalPrayerType} onValueChange={v => onPersonalPrayerTypeChange(v as any)} className="w-full">
-                  <TabsList className="grid grid-cols-3 w-full">
-                    <TabsTrigger value="weekly">주간</TabsTrigger>
-                    <TabsTrigger value="monthly">월간</TabsTrigger>
-                    <TabsTrigger value="yearly">연간</TabsTrigger>
-                  </TabsList>
-                </Tabs>
+          )}
+
+          {/* 개인 기간별 기도제목 포함 옵션 - 기간별 기도제목만 보기 옵션이 활성화되지 않은 경우에만 표시 */}
+          {!onlyPeriodPrayers && (
+            <div className="grid gap-2 border-t pt-4 mt-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="include-personal-prayers">내 기간별 기도제목 포함</Label>
+                <Switch 
+                  id="include-personal-prayers" 
+                  checked={includePersonalPrayers}
+                  onCheckedChange={onIncludePersonalPrayersChange}
+                />
               </div>
-            )}
-          </div>
+              
+              {includePersonalPrayers && (
+                <div className="mt-2">
+                  <Label className="mb-2 block text-sm">기간별 기도제목 타입</Label>
+                  <Tabs value={personalPrayerType} onValueChange={v => onPersonalPrayerTypeChange(v as any)} className="w-full">
+                    <TabsList className="grid grid-cols-3 w-full">
+                      <TabsTrigger value="weekly">주간</TabsTrigger>
+                      <TabsTrigger value="monthly">월간</TabsTrigger>
+                      <TabsTrigger value="yearly">연간</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

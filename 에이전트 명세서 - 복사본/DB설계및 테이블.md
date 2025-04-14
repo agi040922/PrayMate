@@ -114,7 +114,7 @@ period_label VARCHAR(20), -- 예: '2025-W15', '2025-04', '2025'
 content TEXT NOT NULL,
 is_completed BOOLEAN DEFAULT FALSE
 created_at TIMESTAMP DEFAULT now()
-is__public BOOLEAN DEFAULT TRUE
+is_public BOOLEAN DEFAULT TRUE
 );
 
 ALTER TABLE room_participants
