@@ -10,6 +10,7 @@ export interface PersonalPrayerNote {
   period_label: string // 예: '2025-W15', '2025-04', '2025'
   content: string
   is_completed?: boolean // 추가된 필드
+  is_public?: boolean // 공개 여부
   created_at?: string
 }
 
@@ -82,8 +83,9 @@ export async function createPersonalPrayerNote(data: {
   period_type: "weekly" | "monthly" | "yearly"
   period_label?: string
   content: string
+  is_public?: boolean
 }) {
-  const { user_id, period_type, content } = data
+  const { user_id, period_type, content, is_public = true } = data
   // 기간 라벨이 없으면 현재 기간으로 설정
   const period_label = data.period_label || getCurrentPeriodLabel(period_type)
   
@@ -94,7 +96,8 @@ export async function createPersonalPrayerNote(data: {
       period_type,
       period_label,
       content,
-      is_completed: false
+      is_completed: false,
+      is_public
     })
     .select()
     .single()
@@ -111,6 +114,7 @@ export async function updatePersonalPrayerNote(
   data: {
     content?: string
     is_completed?: boolean
+    is_public?: boolean
   }
 ) {
   const { data: updatedNote, error } = await supabase

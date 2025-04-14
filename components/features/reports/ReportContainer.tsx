@@ -1,131 +1,112 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowLeft, Filter, Clock, Calendar, CalendarDays } from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/components/ui/use-toast"
 import { Skeleton } from "@/components/ui/skeleton"
 
-import PrayerSelection, { PrayerRequest } from "./PrayerSelection"
+import PrayerSelection from "./PrayerSelection"
 import ReportPreview from "./ReportPreview"
 import FilterDialog from "./FilterDialog"
-import { getAllRoomMembersPrayerRequests } from "@/lib/supabase/prayer-room-members"
-
-// 샘플 기도제목 데이터 - 개발 및 폴백용
-const samplePrayerRequests: PrayerRequest[] = [
-  {
-    id: "1",
-    title: "아버지의 건강 회복을 위해 기도해주세요",
-    content: "아버지께서 최근 건강이 좋지 않으셔서 병원에 다니고 계십니다. 빠른 회복을 위해 기도 부탁드립니다.",
-    bibleVerse: "시편 30:2 여호와 내 하나님이여 내가 주께 부르짖으매 나를 고치셨나이다",
-    author: "김성실",
-    category: "personal",
-    date: "2023-04-08",
-    status: "praying",
-  },
-  // 다른 샘플 데이터는 축약합니다
-]
-
-// 현재 임시 사용자 ID (실제로는 인증 시스템에서 가져와야 함)
-const TEMP_USER_ID = "temp-user-123"
+import { useAuth } from "@/lib/context/AuthContext"
+import { 
+  PrayerRequest, 
+  ReportFilterOptions, 
+  getFilteredPrayerRequests,
+  getPersonalPrayerNotesForReport
+} from "@/lib/supabase/reports"
 
 export default function ReportContainer() {
-  const [userId, setUserId] = useState<string | null>(null)
+  // 인증 관련
+  const { user, loading: authLoading } = useAuth()
+  const { toast } = useToast()
+  
+  // 상태 변수
   const [selectedPrayers, setSelectedPrayers] = useState<PrayerRequest[]>([])
-  const [reportType, setReportType] = useState<"all" | "weekly" | "monthly" | "yearly">("all")
-  const [prayerRoom, setPrayerRoom] = useState<string>("all")
-  const [category, setCategory] = useState<string>("all")
   const [reportText, setReportText] = useState<string>("")
   const [showFilterDialog, setShowFilterDialog] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const { toast } = useToast()
-
-  // 사용자 정보 가져오기 (실제로는 인증 시스템에서 가져와야 함)
+  
+  // 필터 옵션
+  const [roomId, setRoomId] = useState<string>('all')
+  const [memberId, setMemberId] = useState<string>('all')
+  const [period, setPeriod] = useState<"all" | "weekly" | "monthly" | "yearly">("all")
+  const [category, setCategory] = useState<string>("all")
+  const [includePersonalPrayers, setIncludePersonalPrayers] = useState(false)
+  
+  // 필터 변경 시 기도제목 로드
   useEffect(() => {
-    // 실제 구현에서는 쿠키나 로컬 스토리지에서 사용자 정보를 가져와야 함
-    // 현재는 테스트를 위해 임시 사용자 ID 사용
-    setUserId(TEMP_USER_ID)
-  }, [])
-
-  // 기도제목 데이터 로드
-  const loadPrayerRequests = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      // 사용자 ID가 있는 경우 실제 데이터 로드
-      if (userId) {
-        const options = {
-          period: reportType,
-          category: category !== 'all' ? category : undefined,
-          is_answered: undefined // 응답/미응답 모두 가져오기
-        };
-
-        try {
-          const data = await getAllRoomMembersPrayerRequests(userId, options);
-          
-          if (data && data.length > 0) {
-            setSelectedPrayers(data.map(prayer => ({ ...prayer, selected: false })));
-            setIsLoading(false);
-            return;
-          }
-        } catch (apiError) {
-          console.error("API 오류:", apiError);
-          // API 오류 시 샘플 데이터로 폴백
-        }
+    const loadPrayerRequests = async () => {
+      if (!user) {
+        setIsLoading(false)
+        return
       }
 
-      // 사용자 ID가 없거나 API 오류가 발생한 경우 샘플 데이터 사용
-      // 필터 로직 시뮬레이션
-      const filteredData = samplePrayerRequests.filter(prayer => {
-        const categoryMatch = category === 'all' || prayer.category === category;
-        let dateMatch = true;
+      try {
+        setIsLoading(true)
         
-        if (reportType !== 'all') {
-          const prayerDate = new Date(prayer.date).getTime();
-          const now = Date.now();
-          if (reportType === 'weekly') {
-            dateMatch = prayerDate > now - 7 * 24 * 60 * 60 * 1000;
-          } else if (reportType === 'monthly') {
-            dateMatch = prayerDate > now - 30 * 24 * 60 * 60 * 1000;
-          } else if (reportType === 'yearly') {
-            dateMatch = prayerDate > now - 365 * 24 * 60 * 60 * 1000;
-          }
+        // 필터 옵션 구성
+        const options: ReportFilterOptions = {
+          roomId,
+          memberId,
+          period,
+          category
         }
         
-        return categoryMatch && dateMatch;
-      });
-      
-      setSelectedPrayers(filteredData.map(prayer => ({ ...prayer, selected: false })));
-      setIsLoading(false);
-      
-      // 샘플 데이터 사용 시 알림
-      if (userId) {
+        // 기도제목 로드
+        const data = await getFilteredPrayerRequests(user.id, options)
+        
+        // 개인 기도제목 포함 여부
+        if (includePersonalPrayers) {
+          try {
+            // 개인 기도제목 로드
+            const personalNotes = await getPersonalPrayerNotesForReport(user.id, { period })
+            
+            // 개인 기도제목을 PrayerRequest 형태로 변환
+            const personalPrayers: PrayerRequest[] = personalNotes.map(note => ({
+              id: note.note_id,
+              title: `[개인] ${note.content.substring(0, 30)}${note.content.length > 30 ? '...' : ''}`,
+              content: note.content,
+              author: '나',
+              authorId: user.id,
+              category: '개인',
+              date: new Date(note.created_at || '').toISOString().split('T')[0],
+              status: note.is_completed ? 'answered' : 'praying',
+              selected: false,
+              isPersonalNote: true // 구분을 위한 추가 필드
+            }))
+            
+            // 기존 기도제목과 개인 기도제목 합치기
+            setSelectedPrayers([...data, ...personalPrayers])
+          } catch (error) {
+            console.error('개인 기도제목 로드 실패:', error)
+            setSelectedPrayers(data)
+          }
+        } else {
+          setSelectedPrayers(data)
+        }
+      } catch (error) {
+        console.error("기도제목 로드 실패:", error)
         toast({
-          title: "개발 모드",
-          description: "샘플 기도제목이 표시됩니다.",
-          variant: "default"
-        });
+          title: "기도제목 로딩 실패",
+          description: "기도제목을 불러오는데 문제가 발생했습니다.",
+          variant: "destructive",
+        })
+        setSelectedPrayers([])
+      } finally {
+        setIsLoading(false)
       }
-    } catch (error) {
-      console.error("기도제목을 불러오는 중 오류가 발생했습니다.", error);
-      toast({
-        title: "오류 발생",
-        description: "기도제목을 불러오지 못했습니다. 다시 시도해주세요.",
-        variant: "destructive"
-      });
-      setIsLoading(false);
     }
-  }, [reportType, category, prayerRoom, userId, toast]);
 
-  // 기도제목 데이터 로드 (페이지 로드 및 필터 변경 시)
-  useEffect(() => {
-    loadPrayerRequests();
-  }, [loadPrayerRequests]);
+    loadPrayerRequests()
+  }, [user, roomId, memberId, period, category, includePersonalPrayers, toast])
 
   // 필터링된 기도제목 목록
   const getFilteredPrayers = () => {
-    return selectedPrayers;
+    return selectedPrayers
   }
 
   // 리포트 생성 함수
@@ -139,15 +120,18 @@ export default function ReportContainer() {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
-    });
+    })
     
-    let periodText = '';
-    if (reportType === 'weekly') periodText = '주간';
-    else if (reportType === 'monthly') periodText = '월간';
-    else if (reportType === 'yearly') periodText = '연간';
-    else periodText = '전체';
+    let periodText = ''
+    if (period === 'weekly') periodText = '주간'
+    else if (period === 'monthly') periodText = '월간'
+    else if (period === 'yearly') periodText = '연간'
+    else periodText = '전체'
     
-    report += `📅 ${periodText} 리포트 (${reportDate} 작성)\n\n`;
+    report += `📅 ${periodText} 리포트 (${reportDate} 작성)\n\n`
+
+    // 필터 정보 추가
+    report += `📌 필터: ${category === 'all' ? '모든 카테고리' : category}\n\n`
 
     // 기도 중인 기도제목
     const prayingItems = selectedItems.filter((item) => item.status === "praying" || item.status === null)
@@ -181,10 +165,10 @@ export default function ReportContainer() {
     }
 
     // 통계 추가
-    report += "## 기도제목 통계\n\n";
-    report += `- 총 기도제목: ${selectedItems.length}개\n`;
-    report += `- 기도 중인 제목: ${prayingItems.length}개\n`;
-    report += `- 응답된 기도제목: ${answeredItems.length}개\n`;
+    report += "## 기도제목 통계\n\n"
+    report += `- 총 기도제목: ${selectedItems.length}개\n`
+    report += `- 기도 중인 제목: ${prayingItems.length}개\n`
+    report += `- 응답된 기도제목: ${answeredItems.length}개\n`
     
     setReportText(report)
   }
@@ -194,13 +178,12 @@ export default function ReportContainer() {
       {/* 리포트 페이지 헤더 */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {/* 뒤로가기 버튼 */}
           <Button variant="ghost" size="icon" asChild>
             <Link href="/prayer-room">
               <ArrowLeft className="h-5 w-5" />
             </Link>
           </Button>
-          <h1 className="text-2xl font-bold">리포트 다운로드</h1>
+          <h1 className="text-2xl font-bold">기도제목 리포트</h1>
         </div>
 
         {/* 필터 버튼 */}
@@ -211,21 +194,17 @@ export default function ReportContainer() {
       </div>
 
       {/* 리포트 타입 선택 탭 */}
-      <Tabs defaultValue={reportType} onValueChange={(value) => setReportType(value as any)} className="mb-6">
+      <Tabs defaultValue={period} onValueChange={(value) => setPeriod(value as any)} className="mb-6">
         <TabsList className="grid w-full grid-cols-4">
-          {/* 전체 기도제목 탭 */}
           <TabsTrigger value="all">전체</TabsTrigger>
-          {/* 주간 기도제목 탭 */}
           <TabsTrigger value="weekly">
             <Clock className="mr-2 h-4 w-4" />
             주간
           </TabsTrigger>
-          {/* 월간 기도제목 탭 */}
           <TabsTrigger value="monthly">
             <Calendar className="mr-2 h-4 w-4" />
             월간
           </TabsTrigger>
-          {/* 연간 기도제목 탭 */}
           <TabsTrigger value="yearly">
             <CalendarDays className="mr-2 h-4 w-4" />
             연간
@@ -233,7 +212,7 @@ export default function ReportContainer() {
         </TabsList>
       </Tabs>
 
-      {/* 기도제목 선택 영역 */}
+      {/* 기도제목 선택 및 리포트 영역 */}
       <div className="mb-6 grid gap-6 md:grid-cols-2">
         {isLoading ? (
           // 로딩 중 스켈레톤 UI
@@ -269,10 +248,14 @@ export default function ReportContainer() {
       <FilterDialog
         open={showFilterDialog}
         onOpenChange={setShowFilterDialog}
-        prayerRoom={prayerRoom}
-        onPrayerRoomChange={setPrayerRoom}
+        roomId={roomId}
+        onRoomChange={setRoomId}
+        memberId={memberId}
+        onMemberChange={setMemberId}
         category={category}
         onCategoryChange={setCategory}
+        period={period}
+        onPeriodChange={setPeriod}
       />
     </div>
   )

@@ -58,7 +58,8 @@ export async function createPrayerRoom(data: {
 }
 
 /**
- * 기도방 목록 조회 (사용자가 참여 중인 기도방)
+ * 사용자가 속한 기도방 목록 조회 (사용자가 참여 중인 기도방)
+ * 수정: 기도방의 전체 정보를 반환하도록 변경
  */
 export async function getUserPrayerRooms(userId: string) {
   const { data, error } = await supabase
@@ -80,13 +81,18 @@ export async function getUserPrayerRooms(userId: string) {
   
   if (error) throw error
   
-  // 데이터 형식 변환
+  // 필요한 형식으로 데이터 변환
   return data.map(item => ({
-    ...item.prayer_rooms,
+    room_id: item.prayer_rooms.room_id,
+    title: item.prayer_rooms.title,
+    description: item.prayer_rooms.description,
+    is_public: item.prayer_rooms.is_public,
+    created_by: item.prayer_rooms.created_by,
+    created_at: item.prayer_rooms.created_at,
+    role: item.role, // 추가 필드: 역할 정보 (admin 또는 member)
     participant_id: item.participant_id,
-    role: item.role,
     joined_at: item.joined_at
-  }))
+  })) as PrayerRoom[]
 }
 
 /**

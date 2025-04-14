@@ -13,6 +13,7 @@ export interface PrayerRequest {
   content: string
   bibleVerse?: string
   author: string
+  authorId?: string
   category: string
   date: string
   status: "praying" | "answered" | null

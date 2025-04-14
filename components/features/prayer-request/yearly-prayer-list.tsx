@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Pencil, Trash2, Check, PlusCircle } from "lucide-react"
+import { Pencil, Trash2, Check, PlusCircle, Eye, EyeOff } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -26,6 +26,7 @@ import {
   togglePersonalPrayerNoteCompletion,
   getCurrentPeriodLabel
 } from "@/lib/supabase/personal-prayer-notes"
+import { Switch } from "@/components/ui/switch"
 
 interface YearlyPrayerListProps {
   type: "weekly" | "monthly" | "yearly"
@@ -35,9 +36,11 @@ export function YearlyPrayerList({ type }: YearlyPrayerListProps) {
   const [prayers, setPrayers] = useState<PersonalPrayerNote[]>([])
   const [editingPrayer, setEditingPrayer] = useState<PersonalPrayerNote | null>(null)
   const [newContent, setNewContent] = useState("")
+  const [isPublic, setIsPublic] = useState(true)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [newPrayerContent, setNewPrayerContent] = useState("")
+  const [newPrayerIsPublic, setNewPrayerIsPublic] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -110,6 +113,7 @@ export function YearlyPrayerList({ type }: YearlyPrayerListProps) {
   const startEditing = (prayer: PersonalPrayerNote) => {
     setEditingPrayer(prayer)
     setNewContent(prayer.content)
+    setIsPublic(prayer.is_public !== false)
     setShowEditDialog(true)
   }
 
@@ -121,13 +125,14 @@ export function YearlyPrayerList({ type }: YearlyPrayerListProps) {
 
     try {
       const updatedPrayer = await updatePersonalPrayerNote(editingPrayer.note_id, {
-        content: newContent
+        content: newContent,
+        is_public: isPublic
       })
 
       // 화면 업데이트
       setPrayers(prayers.map((prayer) => 
         prayer.note_id === editingPrayer.note_id 
-          ? { ...prayer, content: newContent } 
+          ? { ...prayer, content: newContent, is_public: isPublic } 
           : prayer
       ))
 
@@ -161,7 +166,8 @@ export function YearlyPrayerList({ type }: YearlyPrayerListProps) {
       const newPrayer = await createPersonalPrayerNote({
         user_id: user.id,
         period_type: type,
-        content: newPrayerContent
+        content: newPrayerContent,
+        is_public: newPrayerIsPublic
       })
 
       // 목록에 추가
@@ -174,6 +180,7 @@ export function YearlyPrayerList({ type }: YearlyPrayerListProps) {
 
       setShowCreateDialog(false)
       setNewPrayerContent("")
+      setNewPrayerIsPublic(true)
     } catch (error) {
       console.error("기도제목 추가 실패:", error)
       toast({
@@ -282,9 +289,14 @@ export function YearlyPrayerList({ type }: YearlyPrayerListProps) {
                   <p className={`text-sm ${prayer.is_completed ? "line-through text-muted-foreground" : ""}`}>
                     {prayer.content}
                   </p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatPeriodLabel(prayer.period_label)}
-                  </p>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <span>{formatPeriodLabel(prayer.period_label)}</span>
+                    {prayer.is_public === false ? (
+                      <EyeOff className="h-3 w-3" />
+                    ) : (
+                      <Eye className="h-3 w-3" />
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -321,6 +333,20 @@ export function YearlyPrayerList({ type }: YearlyPrayerListProps) {
             placeholder="기도제목을 입력하세요"
             className="min-h-[100px]"
           />
+          <div className="flex items-center gap-2 pt-2">
+            <Switch 
+              id="edit-is-public" 
+              checked={isPublic} 
+              onCheckedChange={setIsPublic} 
+            />
+            <Label htmlFor="edit-is-public" className="flex items-center gap-1">
+              {isPublic ? (
+                <>공개 <Eye className="h-4 w-4" /></>
+              ) : (
+                <>비공개 <EyeOff className="h-4 w-4" /></>
+              )}
+            </Label>
+          </div>
           <DialogFooter>
             <Button 
               variant="outline" 
@@ -362,6 +388,20 @@ export function YearlyPrayerList({ type }: YearlyPrayerListProps) {
               placeholder="기도제목을 입력하세요"
               className="min-h-[100px]"
             />
+            <div className="flex items-center gap-2">
+              <Switch 
+                id="new-is-public" 
+                checked={newPrayerIsPublic} 
+                onCheckedChange={setNewPrayerIsPublic} 
+              />
+              <Label htmlFor="new-is-public" className="flex items-center gap-1">
+                {newPrayerIsPublic ? (
+                  <>공개 <Eye className="h-4 w-4" /></>
+                ) : (
+                  <>비공개 <EyeOff className="h-4 w-4" /></>
+                )}
+              </Label>
+            </div>
             <p className="text-xs text-muted-foreground">
               현재 기간: {formatPeriodLabel(getCurrentPeriodLabel(type))}
             </p>

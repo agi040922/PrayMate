@@ -42,6 +42,7 @@ title VARCHAR(100) NOT NULL,
 content TEXT NOT NULL,
 is_answered BOOLEAN DEFAULT FALSE,
 created_at TIMESTAMP DEFAULT now()
+is_anonymous BOOLEAN DEFAULT FALSE
 );
 
 - - 예시 데이터
@@ -75,7 +76,6 @@ content TEXT,
 answered_at TIMESTAMP DEFAULT now()
 );
 
-ALTER TABLE prayer_requests ADD COLUMN is_anonymous BOOLEAN DEFAULT FALSE;
 
 CREATE TABLE bible_verses (
 verse_id SERIAL PRIMARY KEY,
@@ -114,6 +114,7 @@ period_label VARCHAR(20), -- 예: '2025-W15', '2025-04', '2025'
 content TEXT NOT NULL,
 is_completed BOOLEAN DEFAULT FALSE
 created_at TIMESTAMP DEFAULT now()
+is__public BOOLEAN DEFAULT TRUE
 );
 
 ALTER TABLE room_participants

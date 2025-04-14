@@ -19,6 +19,7 @@ interface PrayerRequestDB {
   is_answered: boolean;
   user_id: string;
   user?: {
+    user_id: string;
     name: string;
     email: string;
   };
@@ -213,6 +214,7 @@ export async function getRoomMembersPrayerRequests(roomId: string, options?: {
       content: item.content,
       bibleVerse: item.bible_verse,
       author: item.users?.name || '알 수 없음',
+      authorId: item.user_id,
       category: category?.name || 'unknown',
       date: new Date(item.created_at).toISOString().split('T')[0],
       status: item.is_answered ? "answered" : "praying",
