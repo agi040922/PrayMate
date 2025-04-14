@@ -129,41 +129,54 @@ export function PrayerAIHelper({
 
   return (
     <div className="relative">
-      {/* AI 버튼 */}
+      {/* AI 버튼 - 새로운 디자인 */}
       <Button
         type="button"
-        variant="outline"
-        size="sm"
-        className="absolute right-0 -top-10 flex items-center gap-1"
+        className="absolute right-0 -top-10 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-md hover:shadow-lg transform hover:-translate-y-1 transition-all duration-200 flex items-center gap-1 rounded-lg border-none font-medium"
         onClick={() => setIsOpen(!isOpen)}
+        size="sm"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="mr-1"
-        >
-          <path d="M12 2a8 8 0 0 1 8 8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10a8 8 0 0 1 8-8Z" />
-          <path d="M20 10a8 8 0 0 0-16 0" />
-          <path d="M8 16v-2" />
-          <path d="M16 16v-2" />
-          <path d="M12 16v-2" />
-        </svg>
-        AI 도우미
+        <div className="flex items-center gap-1 px-1">
+          <svg 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            className="h-5 w-5 animate-pulse" 
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path 
+              d="M12 4C7 4 2.73 7.11 1 11.5C2.73 15.89 7 19 12 19C17 19 21.27 15.89 23 11.5C21.27 7.11 17 4 12 4ZM12 16.5C9.24 16.5 7 14.26 7 11.5C7 8.74 9.24 6.5 12 6.5C14.76 6.5 17 8.74 17 11.5C17 14.26 14.76 16.5 12 16.5ZM12 8.5C10.34 8.5 9 9.84 9 11.5C9 13.16 10.34 14.5 12 14.5C13.66 14.5 15 13.16 15 11.5C15 9.84 13.66 8.5 12 8.5Z" 
+              fill="currentColor"
+            />
+            <path 
+              d="M12 14.5C13.6569 14.5 15 13.1569 15 11.5C15 9.84315 13.6569 8.5 12 8.5C10.3431 8.5 9 9.84315 9 11.5C9 13.1569 10.3431 14.5 12 14.5Z" 
+              fill="white" 
+              fillOpacity="0.5"
+            />
+          </svg>
+          <span className="font-bold">AI 도우미</span>
+          <span className="px-1 py-0.5 bg-white bg-opacity-20 rounded-md text-xs ml-1">신규</span>
+        </div>
       </Button>
 
-      {/* AI 도우미 패널 */}
+      {/* AI 도우미 패널 - 옆으로 열리도록 수정 */}
       {isOpen && (
-        <Card className="absolute -right-2 top-10 w-80 z-50 shadow-lg">
-          <CardHeader className="pb-2">
+        <Card className="absolute -right-96 top-0 w-80 z-50 shadow-xl border-2 border-blue-100 dark:border-blue-900">
+          <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50">
             <div className="flex justify-between items-center">
-              <CardTitle className="text-sm font-medium">AI 기도 도우미</CardTitle>
+              <CardTitle className="text-sm font-medium flex items-center">
+                <svg 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  className="h-4 w-4 mr-2 text-blue-500" 
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path 
+                    d="M12 4C7 4 2.73 7.11 1 11.5C2.73 15.89 7 19 12 19C17 19 21.27 15.89 23 11.5C21.27 7.11 17 4 12 4Z" 
+                    fill="currentColor"
+                  />
+                </svg>
+                AI 기도 도우미
+              </CardTitle>
               <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -186,7 +199,7 @@ export function PrayerAIHelper({
               기도제목을 정리하고 관련 성경 구절을 추천해드려요
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-4">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-4">
                 <TabsTrigger value="refine">내용 다듬기</TabsTrigger>
@@ -197,7 +210,7 @@ export function PrayerAIHelper({
                 <div className="space-y-2">
                   <Button 
                     size="sm" 
-                    className="w-full" 
+                    className="w-full bg-blue-500 hover:bg-blue-600" 
                     onClick={handleRefine}
                     disabled={isLoading || (!title && !content)}
                   >
@@ -206,7 +219,7 @@ export function PrayerAIHelper({
                   </Button>
                   
                   {refinedTitle && (
-                    <div className="space-y-1 mt-2 p-2 border rounded-md">
+                    <div className="space-y-1 mt-2 p-2 border rounded-md border-blue-100 dark:border-blue-900">
                       <div className="text-xs font-medium">다듬어진 제목:</div>
                       <p className="text-sm">{refinedTitle}</p>
                       <Button size="sm" variant="outline" className="w-full mt-1" onClick={applyRefinedTitle}>
@@ -216,7 +229,7 @@ export function PrayerAIHelper({
                   )}
                   
                   {refinedContent && (
-                    <div className="space-y-1 mt-2 p-2 border rounded-md">
+                    <div className="space-y-1 mt-2 p-2 border rounded-md border-blue-100 dark:border-blue-900">
                       <div className="text-xs font-medium">다듬어진 내용:</div>
                       <p className="text-sm">{refinedContent}</p>
                       <Button size="sm" variant="outline" className="w-full mt-1" onClick={applyRefinedContent}>
@@ -230,7 +243,7 @@ export function PrayerAIHelper({
               <TabsContent value="verses" className="space-y-4">
                 <Button 
                   size="sm" 
-                  className="w-full" 
+                  className="w-full bg-purple-500 hover:bg-purple-600" 
                   onClick={handleRecommendVerses}
                   disabled={isLoading || !content}
                 >
@@ -241,9 +254,11 @@ export function PrayerAIHelper({
                 {bibleVerses.length > 0 && (
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {bibleVerses.map((verse, index) => (
-                      <div key={index} className="p-2 border rounded-md">
+                      <div key={index} className="p-2 border rounded-md border-purple-100 dark:border-purple-900">
                         <div className="flex justify-between items-center">
-                          <Badge variant="outline">{verse.reference}</Badge>
+                          <Badge variant="outline" className="bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300">
+                            {verse.reference}
+                          </Badge>
                           <Button size="sm" variant="ghost" onClick={() => applyVerse(verse)}>
                             적용
                           </Button>
@@ -262,3 +277,33 @@ export function PrayerAIHelper({
     </div>
   )
 } 
+// 1. AI 도우미 버튼 개선
+// 이전의 단순한 버튼에서 그라데이션 효과가 적용된 화려한 디자인으로 변경
+// 애니메이션 효과가 있는 아이콘 추가
+// "신규" 배지를 추가하여 눈에 더 잘 띄도록 개선
+// 호버 시 약간 위로 뜨는 효과 추가로 더 직관적인 인터랙션 제공
+
+// 2. AI 도우미 패널 위치 변경
+// 이전: 입력 폼 아래에 나타나서 입력 폼과 함께 보기 어려움
+// 개선: 오른쪽에 나타나도록 변경하여 기도제목 작성 폼과 AI 도우미를 동시에 볼 수 있음
+// 전체 다이얼로그 너비를 600px로 확장하여 두 요소가 나란히 표시될 공간 확보
+
+// 3. AI 도우미 패널 디자인 개선
+// 그라데이션 헤더 추가
+// 탭별로 색상 테마 적용(파란색/보라색)
+// 성경 구절 뱃지에 색상 추가하여 시각적으로 더 구분되도록 개선
+// 전체적으로 더 풍부한 시각적 계층 구조 적용
+
+// 4. OpenAI GPT-4 Turbo API 연동
+// 기존의 더미 응답 대신 실제 OpenAI API를 호출하도록 변경
+// GPT-4-turbo 모델 사용으로 더 정확하고 자연스러운 추천 제공
+// 두 가지 전문화된 API 호출 함수 구현:
+// callOpenAI: 일반 텍스트 응답용
+// callOpenAIForVerses: JSON 형식의 성경 구절 추천용
+// 시스템 프롬프트에 기독교 컨텍스트 추가로 더 적절한 기도제목 및 구절 추천 가능
+// 실패 시 폴백 옵션 제공으로 안정성 향상
+
+// 5. 기도제목 폼 레이아웃 개선
+// 좌우 분할 레이아웃으로 변경하여 더 효율적인 공간 활용
+// 왼쪽에는 입력 폼, 오른쪽에는 AI 도우미가 배치되는 직관적인 구조
+// 이 변경을 통해 사용자는 기도제목을 작성하면서 동시에 AI 도우미의 도움을 받을 수 있게 되었으며, 더 아름다운 디자인과 편리한 UX를 제공받게 되었습니다.

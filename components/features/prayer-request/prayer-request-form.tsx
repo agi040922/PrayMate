@@ -134,74 +134,81 @@ export function PrayerRequestForm({ roomId, onClose }: PrayerRequestFormProps) {
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>새 기도제목 등록</DialogTitle>
             <DialogDescription>기도제목을 작성하여 공유해보세요. 함께 기도하는 공동체가 응원합니다.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="title">제목</Label>
-              <Input 
-                id="title" 
-                placeholder="기도제목의 제목을 입력하세요" 
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required 
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="category">카테고리</Label>
-              <Select value={categoryId} onValueChange={setCategoryId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="카테고리 선택" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map(category => (
-                    <SelectItem key={category.category_id} value={String(category.category_id)}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2 relative">
-              <Label htmlFor="content">내용</Label>
-              <Textarea 
-                id="content" 
-                placeholder="기도제목의 내용을 자세히 적어주세요" 
-                rows={4} 
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                required 
-              />
+            <div className="flex flex-row justify-between space-x-4">
+              {/* 왼쪽: 폼 영역 */}
+              <div className="flex-1 space-y-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="title">제목</Label>
+                  <Input 
+                    id="title" 
+                    placeholder="기도제목의 제목을 입력하세요" 
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    required 
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="category">카테고리</Label>
+                  <Select value={categoryId} onValueChange={setCategoryId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="카테고리 선택" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map(category => (
+                        <SelectItem key={category.category_id} value={String(category.category_id)}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="content">내용</Label>
+                  <Textarea 
+                    id="content" 
+                    placeholder="기도제목의 내용을 자세히 적어주세요" 
+                    rows={4} 
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    required 
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="verse">성경구절 (선택사항)</Label>
+                  <Input 
+                    id="verse" 
+                    placeholder="관련 성경구절이 있다면 입력해주세요" 
+                    value={bibleVerse}
+                    onChange={(e) => setBibleVerse(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch 
+                    id="anonymous"
+                    checked={isAnonymous}
+                    onCheckedChange={setIsAnonymous}
+                  />
+                  <Label htmlFor="anonymous">익명으로 올리기</Label>
+                </div>
+              </div>
               
-              {/* AI 도우미 컴포넌트 */}
-              <PrayerAIHelper
-                title={title}
-                content={content}
-                onApplyTitle={handleApplyTitle}
-                onApplyContent={handleApplyContent}
-                onApplyVerse={handleApplyVerse}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="verse">성경구절 (선택사항)</Label>
-              <Input 
-                id="verse" 
-                placeholder="관련 성경구절이 있다면 입력해주세요" 
-                value={bibleVerse}
-                onChange={(e) => setBibleVerse(e.target.value)}
-              />
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch 
-                id="anonymous"
-                checked={isAnonymous}
-                onCheckedChange={setIsAnonymous}
-              />
-              <Label htmlFor="anonymous">익명으로 올리기</Label>
+              {/* 오른쪽: AI 도우미 */}
+              <div className="flex relative min-w-[280px]">
+                <PrayerAIHelper
+                  title={title}
+                  content={content}
+                  onApplyTitle={handleApplyTitle}
+                  onApplyContent={handleApplyContent}
+                  onApplyVerse={handleApplyVerse}
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>

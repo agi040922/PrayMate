@@ -13,7 +13,13 @@ import { useAuth } from "@/lib/context/AuthContext"
 import { useToast } from "@/components/ui/use-toast"
 import { Plus, Search } from "lucide-react"
 import { PrayerRoomSearch } from "./prayer-room-search"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 interface PrayerRoomSidebarProps {
   className?: string
@@ -23,10 +29,10 @@ interface PrayerRoomSidebarProps {
 export function PrayerRoomSidebar({ className, onSelect }: PrayerRoomSidebarProps) {
   const [openCreateDialog, setOpenCreateDialog] = useState(false)
   const [openManageDialog, setOpenManageDialog] = useState(false)
+  const [openSearchDialog, setOpenSearchDialog] = useState(false)
   const [rooms, setRooms] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null)
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
   
   const { user } = useAuth()
   const { toast } = useToast()
@@ -72,8 +78,8 @@ export function PrayerRoomSidebar({ className, onSelect }: PrayerRoomSidebarProp
       onSelect(roomId)
     }
     
-    // 검색 패널 닫기
-    setIsSearchOpen(false)
+    // 검색 다이얼로그 닫기
+    setOpenSearchDialog(false)
   }
 
   return (
@@ -85,21 +91,12 @@ export function PrayerRoomSidebar({ className, onSelect }: PrayerRoomSidebarProp
             <Button 
               variant="ghost" 
               size="icon" 
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
+              onClick={() => setOpenSearchDialog(true)}
               title="기도방 검색"
             >
               <Search className="h-4 w-4" />
             </Button>
           </div>
-          
-          {/* 검색 컴포넌트 */}
-          <Collapsible open={isSearchOpen} onOpenChange={setIsSearchOpen}>
-            <CollapsibleContent className="mb-4">
-              <div className="border rounded-md p-2 bg-background/50">
-                <PrayerRoomSearch onJoin={handleJoinRoom} />
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
           
           <div className="space-y-1">
             <Button
@@ -161,6 +158,19 @@ export function PrayerRoomSidebar({ className, onSelect }: PrayerRoomSidebarProp
         open={openCreateDialog} 
         onOpenChange={setOpenCreateDialog} 
       />
+      
+      {/* 기도방 검색 다이얼로그 */}
+      <Dialog open={openSearchDialog} onOpenChange={setOpenSearchDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>기도방 검색</DialogTitle>
+            <DialogDescription>이름 또는 코드로 기도방을 검색하고 참여하세요.</DialogDescription>
+          </DialogHeader>
+          <div className="mt-4">
+            <PrayerRoomSearch onJoin={handleJoinRoom} />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

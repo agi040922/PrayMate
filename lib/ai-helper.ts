@@ -2,16 +2,41 @@
  * AI 도우미 - 기도제목 다듬기와 성경 구절 추천을 위한 기능
  */
 
+// 성경 구절 추천 타입 정의
+export interface BibleVerseRecommendation {
+  reference: string;  // 예: "요한복음 3:16"
+  text: string;       // 실제 말씀 내용
+  relevance: string;  // 이 구절이 왜 추천되었는지 설명
+}
+
+// API 호출 함수 (서버 API 라우트를 호출)
+async function callPrayerAPI(action: string, content: string) {
+  try {
+    const response = await fetch('/api/prayer', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ action, content }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'API 호출 중 오류가 발생했습니다.');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('API 호출 오류:', error);
+    throw error;
+  }
+}
+
 // 기도제목 제목 다듬기 함수
 export async function refinePrayerTitle(title: string): Promise<string> {
-  // 실제 구현에서는 OpenAI API 등을 사용할 수 있음
-  // 현재는 간단한 예시 구현
   try {
-    // 여기에 실제 AI API 호출 코드가 들어갑니다
-    // 예시: return await callOpenAI(`다음 기도제목 제목을 더 간결하고 명확하게 다듬어주세요: ${title}`);
-    
-    // 임시 구현 (실제 프로덕션 코드에서는 실제 API 연동 필요)
-    return `${title} - 다듬어진 제목`;
+    const data = await callPrayerAPI('refine-title', title);
+    return data.result || '제목 다듬기에 실패했습니다.';
   } catch (error) {
     console.error("제목 다듬기 오류:", error);
     throw new Error("제목을 다듬는 중 오류가 발생했습니다.");
@@ -21,11 +46,8 @@ export async function refinePrayerTitle(title: string): Promise<string> {
 // 기도제목 내용 다듬기 함수
 export async function refinePrayerContent(content: string): Promise<string> {
   try {
-    // 여기에 실제 AI API 호출 코드가 들어갑니다
-    // 예시: return await callOpenAI(`다음 기도제목 내용을 더 명확하고 간결하게 정리해주세요: ${content}`);
-    
-    // 임시 구현
-    return `${content} - 다듬어진 내용`;
+    const data = await callPrayerAPI('refine-content', content);
+    return data.result || '내용 다듬기에 실패했습니다.';
   } catch (error) {
     console.error("내용 다듬기 오류:", error);
     throw new Error("내용을 다듬는 중 오류가 발생했습니다.");
@@ -35,10 +57,13 @@ export async function refinePrayerContent(content: string): Promise<string> {
 // 성경 구절 추천 함수
 export async function recommendBibleVerses(content: string): Promise<BibleVerseRecommendation[]> {
   try {
-    // 여기에 실제 AI API 호출 코드가 들어갑니다
-    // 예시: return await callOpenAI(`다음 기도제목과 관련된 성경 구절 3개를 추천해주세요: ${content}`);
+    const data = await callPrayerAPI('suggest-verses', content);
     
-    // 임시 구현
+    if (data.verses && Array.isArray(data.verses)) {
+      return data.verses;
+    }
+    
+    // 기본 응답 (API 호출 실패 또는 잘못된 응답 형식인 경우)
     return [
       {
         reference: "요한복음 3:16",
@@ -60,11 +85,4 @@ export async function recommendBibleVerses(content: string): Promise<BibleVerseR
     console.error("성경 구절 추천 오류:", error);
     throw new Error("성경 구절을 추천하는 중 오류가 발생했습니다.");
   }
-}
-
-// 성경 구절 추천 타입 정의
-export interface BibleVerseRecommendation {
-  reference: string;  // 예: "요한복음 3:16"
-  text: string;       // 실제 말씀 내용
-  relevance: string;  // 이 구절이 왜 추천되었는지 설명
 } 
