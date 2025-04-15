@@ -1,4 +1,5 @@
-import { supabase } from "@/lib/supabaseClient"
+import { supabase } from "../supabaseClient"
+import { createBibleVerse, updateBibleVerse, deleteBibleVerseByRequestId, getBibleVerseByRequestId } from "./bible-verses"
 
 // 기도 요청 타입 정의
 export interface PrayerRequest {
@@ -6,12 +7,15 @@ export interface PrayerRequest {
   room_id: string
   category_id?: number
   user_id: string
-  bible_verse?: string
   title: string
   content: string
   is_answered: boolean
   is_anonymous: boolean
   created_at?: string
+  bible_verse?: {  // 조회 결과를 위한 필드 (DB에는 저장되지 않음)
+    reference: string
+    text: string
+  }
 }
 
 // 카테고리 타입 정의
@@ -123,6 +127,20 @@ export async function getPrayerRequestDetails(requestId: string) {
     .single()
   
   if (error) throw error
+  
+  // 성경 구절 정보 가져오기
+  try {
+    const bibleVerse = await getBibleVerseByRequestId(requestId)
+    if (bibleVerse) {
+      data.bible_verse = {
+        reference: bibleVerse.reference,
+        text: bibleVerse.text
+      }
+    }
+  } catch (err) {
+    console.error("성경 구절 조회 실패:", err)
+  }
+  
   return data
 }
 
@@ -133,20 +151,23 @@ export async function createPrayerRequest(data: {
   room_id: string
   user_id: string
   category_id?: number
-  bible_verse?: string
+  bible_verse?: {
+    reference: string
+    text: string
+  }
   title: string
   content: string
   is_anonymous?: boolean
 }) {
   const { room_id, user_id, category_id, bible_verse, title, content, is_anonymous = false } = data
   
+  // 1. 기도 요청 먼저 생성
   const { data: request, error } = await supabase
     .from("prayer_requests")
     .insert({
       room_id,
       user_id,
       category_id,
-      bible_verse,
       title,
       content,
       is_anonymous,
@@ -156,6 +177,23 @@ export async function createPrayerRequest(data: {
     .single()
   
   if (error) throw error
+  
+  // 2. 성경 구절이 있는 경우 별도로 저장
+  if (bible_verse && bible_verse.reference && bible_verse.text) {
+    try {
+      await createBibleVerse({
+        request_id: request.request_id,
+        reference: bible_verse.reference,
+        text: bible_verse.text
+      })
+      
+      // 반환 결과에 성경 구절 정보 포함
+      request.bible_verse = bible_verse
+    } catch (err) {
+      console.error("성경 구절 저장 실패:", err)
+    }
+  }
+  
   return request
 }
 
@@ -166,20 +204,59 @@ export async function updatePrayerRequest(
   requestId: string,
   data: {
     category_id?: number
-    bible_verse?: string
+    bible_verse?: {
+      reference: string
+      text: string
+    }
     title?: string
     content?: string
     is_anonymous?: boolean
   }
 ) {
+  const { bible_verse, ...requestData } = data
+  
+  // 1. 기도 요청 정보 업데이트
   const { data: updatedRequest, error } = await supabase
     .from("prayer_requests")
-    .update(data)
+    .update(requestData)
     .eq("request_id", requestId)
     .select()
     .single()
   
   if (error) throw error
+  
+  // 2. 성경 구절 처리
+  if (bible_verse !== undefined) {
+    try {
+      // 기존 성경 구절 확인
+      const existingVerse = await getBibleVerseByRequestId(requestId)
+      
+      if (existingVerse && bible_verse && bible_verse.reference && bible_verse.text) {
+        // 기존 구절 업데이트
+        await updateBibleVerse(existingVerse.verse_id, {
+          reference: bible_verse.reference,
+          text: bible_verse.text
+        })
+        
+        updatedRequest.bible_verse = bible_verse
+      } else if (existingVerse && (!bible_verse || (!bible_verse.reference && !bible_verse.text))) {
+        // 성경 구절 삭제
+        await deleteBibleVerseByRequestId(requestId)
+      } else if (!existingVerse && bible_verse && bible_verse.reference && bible_verse.text) {
+        // 새 성경 구절 추가
+        await createBibleVerse({
+          request_id: requestId,
+          reference: bible_verse.reference,
+          text: bible_verse.text
+        })
+        
+        updatedRequest.bible_verse = bible_verse
+      }
+    } catch (err) {
+      console.error("성경 구절 업데이트 실패:", err)
+    }
+  }
+  
   return updatedRequest
 }
 
@@ -187,6 +264,14 @@ export async function updatePrayerRequest(
  * 기도 요청 삭제
  */
 export async function deletePrayerRequest(requestId: string) {
+  // 1. 연결된 성경 구절 삭제 시도 (실패해도 계속 진행)
+  try {
+    await deleteBibleVerseByRequestId(requestId)
+  } catch (err) {
+    console.error("성경 구절 삭제 실패:", err)
+  }
+  
+  // 2. 기도 요청 삭제
   const { error } = await supabase
     .from("prayer_requests")
     .delete()
@@ -448,4 +533,144 @@ export async function getYearlyPrayerStatistics(userId: string, year: number) {
     monthly: monthlyStats,
     monthlyAnswered: answeredStats
   }
+}
+
+/**
+ * 특정 사용자의 기도 요청 목록 조회
+ */
+export async function getUserPrayerRequests(userId: string, options?: {
+  is_answered?: boolean
+  limit?: number
+  offset?: number
+  room_id?: string
+}) {
+  let query = supabase
+    .from("prayer_requests")
+    .select(`
+      *,
+      categories (
+        category_id,
+        name
+      )
+    `)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+  
+  // 필터 적용
+  if (options?.is_answered !== undefined) {
+    query = query.eq("is_answered", options.is_answered)
+  }
+  
+  if (options?.room_id) {
+    query = query.eq("room_id", options.room_id)
+  }
+  
+  // 페이지네이션 적용
+  if (options?.limit) {
+    query = query.limit(options.limit)
+  }
+  
+  if (options?.offset) {
+    query = query.range(options.offset, (options.offset + (options.limit || 10) - 1))
+  }
+  
+  const { data, error } = await query
+  
+  if (error) throw error
+  
+  // 성경 구절 정보 가져오기
+  const prayerRequests = []
+  for (const request of data) {
+    try {
+      const bibleVerse = await getBibleVerseByRequestId(request.request_id)
+      if (bibleVerse) {
+        request.bible_verse = {
+          reference: bibleVerse.reference,
+          text: bibleVerse.text
+        }
+      }
+    } catch (err) {
+      console.error("성경 구절 조회 실패:", err)
+    }
+    prayerRequests.push(request)
+  }
+  
+  return prayerRequests
+}
+
+/**
+ * 특정 사용자가 참여한 기도방의 모든 기도 요청 목록 조회
+ */
+export async function getUserParticipatingRoomPrayerRequests(userId: string, options?: {
+  is_answered?: boolean
+  limit?: number
+  offset?: number
+}) {
+  // 1. 사용자가 참여한 기도방 ID 목록 조회
+  const { data: roomParticipants, error: roomError } = await supabase
+    .from("room_participants")
+    .select("room_id")
+    .eq("user_id", userId)
+  
+  if (roomError) throw roomError
+  
+  const roomIds = roomParticipants.map(p => p.room_id)
+  
+  if (roomIds.length === 0) {
+    return []
+  }
+  
+  // 2. 해당 기도방의 기도 요청 목록 조회
+  let query = supabase
+    .from("prayer_requests")
+    .select(`
+      *,
+      users (
+        user_id,
+        name
+      ),
+      categories (
+        category_id,
+        name
+      )
+    `)
+    .in("room_id", roomIds)
+    .order("created_at", { ascending: false })
+  
+  // 필터 적용
+  if (options?.is_answered !== undefined) {
+    query = query.eq("is_answered", options.is_answered)
+  }
+  
+  // 페이지네이션 적용
+  if (options?.limit) {
+    query = query.limit(options.limit)
+  }
+  
+  if (options?.offset) {
+    query = query.range(options.offset, (options.offset + (options.limit || 10) - 1))
+  }
+  
+  const { data, error } = await query
+  
+  if (error) throw error
+  
+  // 성경 구절 정보 가져오기
+  const prayerRequests = []
+  for (const request of data) {
+    try {
+      const bibleVerse = await getBibleVerseByRequestId(request.request_id)
+      if (bibleVerse) {
+        request.bible_verse = {
+          reference: bibleVerse.reference,
+          text: bibleVerse.text
+        }
+      }
+    } catch (err) {
+      console.error("성경 구절 조회 실패:", err)
+    }
+    prayerRequests.push(request)
+  }
+  
+  return prayerRequests
 } 

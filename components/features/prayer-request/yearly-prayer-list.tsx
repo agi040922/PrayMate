@@ -30,9 +30,11 @@ import { Switch } from "@/components/ui/switch"
 
 interface YearlyPrayerListProps {
   type: "weekly" | "monthly" | "yearly"
+  prayers?: PersonalPrayerNote[]
+  onUpdate?: () => void
 }
 
-export function YearlyPrayerList({ type }: YearlyPrayerListProps) {
+export function YearlyPrayerList({ type, prayers: externalPrayers, onUpdate }: YearlyPrayerListProps) {
   const [prayers, setPrayers] = useState<PersonalPrayerNote[]>([])
   const [editingPrayer, setEditingPrayer] = useState<PersonalPrayerNote | null>(null)
   const [newContent, setNewContent] = useState("")
@@ -41,7 +43,7 @@ export function YearlyPrayerList({ type }: YearlyPrayerListProps) {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [newPrayerContent, setNewPrayerContent] = useState("")
   const [newPrayerIsPublic, setNewPrayerIsPublic] = useState(true)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(!externalPrayers)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const { toast } = useToast()
@@ -60,10 +62,18 @@ export function YearlyPrayerList({ type }: YearlyPrayerListProps) {
     }
   }
 
-  // 기도제목 목록 불러오기
+  // 외부 prayers가 제공되면 그것을 사용
+  useEffect(() => {
+    if (externalPrayers) {
+      setPrayers(externalPrayers);
+      setIsLoading(false);
+    }
+  }, [externalPrayers]);
+
+  // 외부 prayers가 없을 때만 직접 불러오기
   useEffect(() => {
     const fetchPrayers = async () => {
-      if (!user) {
+      if (!user || externalPrayers) {
         setIsLoading(false)
         return
       }
@@ -84,7 +94,7 @@ export function YearlyPrayerList({ type }: YearlyPrayerListProps) {
     }
 
     fetchPrayers()
-  }, [user, type, toast])
+  }, [user, type, toast, externalPrayers])
 
   // 기도제목 완료 상태 토글 함수
   const toggleComplete = async (id: string) => {
@@ -99,6 +109,9 @@ export function YearlyPrayerList({ type }: YearlyPrayerListProps) {
           ? { ...prayer, is_completed: !prayer.is_completed } 
           : prayer
       ))
+      
+      // 부모 컴포넌트 업데이트 콜백
+      if (onUpdate) onUpdate();
     } catch (error) {
       console.error("기도제목 상태 변경 실패:", error)
       toast({
@@ -144,6 +157,9 @@ export function YearlyPrayerList({ type }: YearlyPrayerListProps) {
       setShowEditDialog(false)
       setEditingPrayer(null)
       setNewContent("")
+      
+      // 부모 컴포넌트 업데이트 콜백
+      if (onUpdate) onUpdate();
     } catch (error) {
       console.error("기도제목 수정 실패:", error)
       toast({
@@ -181,6 +197,9 @@ export function YearlyPrayerList({ type }: YearlyPrayerListProps) {
       setShowCreateDialog(false)
       setNewPrayerContent("")
       setNewPrayerIsPublic(true)
+      
+      // 부모 컴포넌트 업데이트 콜백
+      if (onUpdate) onUpdate();
     } catch (error) {
       console.error("기도제목 추가 실패:", error)
       toast({
@@ -200,13 +219,16 @@ export function YearlyPrayerList({ type }: YearlyPrayerListProps) {
     try {
       await deletePersonalPrayerNote(id)
       
-      // 목록에서 제거
-      setPrayers(prayers.filter((prayer) => prayer.note_id !== id))
-
+      // 화면 업데이트
+      setPrayers(prayers.filter(prayer => prayer.note_id !== id))
+      
       toast({
         title: "기도제목 삭제 완료",
         description: "기도제목이 삭제되었습니다."
       })
+      
+      // 부모 컴포넌트 업데이트 콜백
+      if (onUpdate) onUpdate();
     } catch (error) {
       console.error("기도제목 삭제 실패:", error)
       toast({

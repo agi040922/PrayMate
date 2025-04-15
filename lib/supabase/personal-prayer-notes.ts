@@ -203,4 +203,23 @@ export async function getPersonalPrayerStatistics(userId: string) {
   })
   
   return stats
+}
+
+/**
+ * 사용자의 특정 기간 유형의 기도제목 조회 (최신 1개만)
+ */
+export async function getPersonalPrayerNotesForPeriod(
+  userId: string,
+  type: "weekly" | "monthly" | "yearly"
+): Promise<PersonalPrayerNote[]> {
+  const { data, error } = await supabase
+    .from("personal_prayer_notes")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("period_type", type)
+    .order("created_at", { ascending: false })
+    .limit(10)
+  
+  if (error) throw error
+  return data
 } 

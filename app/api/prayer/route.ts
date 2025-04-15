@@ -24,7 +24,7 @@ export async function POST(req: Request) {
       다듬어진 제목만 반환해주세요. 추가 설명이나 따옴표는 포함하지 마세요.`;
       
       const response = await openai.chat.completions.create({
-        model: 'gpt-4-turbo-preview',
+        model: 'gpt-3.5-turbo',
         messages: [
           { role: 'system', content: baseSystemMessage },
           { role: 'user', content: prompt }
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
       다듬어진 내용만 반환해주세요. 추가 설명이나 따옴표는 포함하지 마세요.`;
       
       const response = await openai.chat.completions.create({
-        model: 'gpt-4-turbo-preview',
+        model: 'gpt-4o',
         messages: [
           { role: 'system', content: baseSystemMessage },
           { role: 'user', content: prompt }
@@ -79,13 +79,13 @@ export async function POST(req: Request) {
         }
       `;
       
-      const prompt = `다음 기도제목과 관련된 성경 구절 3개를 추천해주세요. 각 구절이 이 기도제목과 어떻게, 왜 연관되는지 짧게 설명해주세요:
+      const prompt = `다음 기도제목과 관련된 성경 구절 3개를 추천해주세요. 각 구절이 이 기도제목과 어떻게, 왜 연관되는지 짧게 설명해주세요 하지만 위로적이고 친절하게:
       
       "${content}"`;
       
       try {
         const response = await openai.chat.completions.create({
-          model: 'gpt-4-turbo-preview',
+          model: 'gpt-4o',
           messages: [
             { role: 'system', content: systemMessage },
             { role: 'user', content: prompt }

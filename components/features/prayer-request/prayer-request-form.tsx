@@ -28,7 +28,8 @@ interface PrayerRequestFormProps {
 export function PrayerRequestForm({ roomId, onClose }: PrayerRequestFormProps) {
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
-  const [bibleVerse, setBibleVerse] = useState("")
+  const [bibleReference, setBibleReference] = useState("")
+  const [bibleText, setBibleText] = useState("")
   const [categoryId, setCategoryId] = useState<string>("")
   const [isAnonymous, setIsAnonymous] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -85,13 +86,14 @@ export function PrayerRequestForm({ roomId, onClose }: PrayerRequestFormProps) {
     
     try {
       const parsedCategoryId = categoryId ? parseInt(categoryId) : undefined
+      const bibleVerse = bibleReference ? { reference: bibleReference, text: bibleText } : undefined
       
       await createPrayerRequest({
         room_id: roomId,
         user_id: user.id,
         title,
         content,
-        bible_verse: bibleVerse || undefined,
+        bible_verse: bibleVerse,
         category_id: parsedCategoryId,
         is_anonymous: isAnonymous
       })
@@ -129,7 +131,21 @@ export function PrayerRequestForm({ roomId, onClose }: PrayerRequestFormProps) {
   }
   
   const handleApplyVerse = (verse: string) => {
-    setBibleVerse(verse)
+    // verse에서 reference와 text를 분리하는 로직 추가 필요
+    const parts = verse.split(' - ');
+    if (parts.length >= 2) {
+      setBibleReference(parts[0]);
+      setBibleText(parts.slice(1).join(' - '));
+      
+      // 업데이트 후 사용자에게 알림
+      toast({
+        title: "성경 구절이 폼에 적용되었습니다",
+        description: `구절: ${parts[0]}`,
+        variant: "default",
+      });
+    } else {
+      setBibleReference(verse);
+    }
   }
 
   return (
@@ -181,12 +197,22 @@ export function PrayerRequestForm({ roomId, onClose }: PrayerRequestFormProps) {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="verse">성경구절 (선택사항)</Label>
+                  <Label htmlFor="bibleReference">성경구절 참조 (선택사항)</Label>
                   <Input 
-                    id="verse" 
-                    placeholder="관련 성경구절이 있다면 입력해주세요" 
-                    value={bibleVerse}
-                    onChange={(e) => setBibleVerse(e.target.value)}
+                    id="bibleReference" 
+                    placeholder="예: 요한복음 3:16" 
+                    value={bibleReference}
+                    onChange={(e) => setBibleReference(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="bibleText">성경구절 내용 (선택사항)</Label>
+                  <Textarea 
+                    id="bibleText" 
+                    placeholder="구절 내용을 입력해주세요" 
+                    rows={2}
+                    value={bibleText}
+                    onChange={(e) => setBibleText(e.target.value)}
                   />
                 </div>
                 <div className="flex items-center space-x-2">

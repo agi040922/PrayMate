@@ -37,7 +37,7 @@ request_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 room_id UUID REFERENCES prayer_rooms(room_id) ON DELETE CASCADE,
 category_id INT REFERENCES categories(category_id),
 user_id UUID REFERENCES users(user_id) ON DELETE SET NULL,
-bible_verse VARCHAR(50),
+bible_verse JSONB,
 title VARCHAR(100) NOT NULL,
 content TEXT NOT NULL,
 is_answered BOOLEAN DEFAULT FALSE,
@@ -76,14 +76,11 @@ content TEXT,
 answered_at TIMESTAMP DEFAULT now()
 );
 
-
 CREATE TABLE bible_verses (
-verse_id SERIAL PRIMARY KEY,
-book VARCHAR(20) NOT NULL,
-chapter INT NOT NULL,
-verse_start INT NOT NULL,
-verse_end INT,
-content TEXT NOT NULL
+verse_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+request_id UUID REFERENCES prayer_requests(request_id) ON DELETE CASCADE,
+reference TEXT NOT NULL,
+text TEXT NOT NULL
 );
 
 CREATE TABLE notification_settings (

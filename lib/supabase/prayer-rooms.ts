@@ -390,3 +390,35 @@ export async function joinPrayerRoomBySearch(data: {
     participantData: participant
   }
 }
+
+/**
+ * 사용자가 참여 중인 기도방 목록 조회
+ */
+export async function getUserRooms(userId: string) {
+  const { data, error } = await supabase
+    .from('room_participants')
+    .select(`
+      participant_id,
+      role,
+      joined_at,
+      prayer_rooms (
+        room_id,
+        title, 
+        description,
+        is_public,
+        created_by,
+        created_at
+      )
+    `)
+    .eq('user_id', userId)
+  
+  if (error) throw error
+  
+  // 중첩된 구조 풀어서 반환
+  return data.map((item) => ({
+    participant_id: item.participant_id,
+    role: item.role,
+    joined_at: item.joined_at,
+    ...item.prayer_rooms
+  }))
+}
