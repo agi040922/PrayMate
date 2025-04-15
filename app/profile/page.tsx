@@ -382,7 +382,7 @@ function PrayerEditDialog({
         title,
         content,
         is_anonymous: isAnonymous,
-        category_id: categoryId,
+        category_id: categoryId === 0 ? undefined : categoryId,
         bible_verse: (bibleReference && bibleText) ? {
           reference: bibleReference,
           text: bibleText
@@ -423,14 +423,14 @@ function PrayerEditDialog({
           <div className="grid gap-2">
             <Label htmlFor="category">카테고리</Label>
             <Select 
-              value={categoryId?.toString() || ""} 
-              onValueChange={(value) => setCategoryId(value ? parseInt(value) : undefined)}
+              value={categoryId?.toString() || "none"} 
+              onValueChange={(value) => setCategoryId(value === "none" ? undefined : parseInt(value))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="카테고리 선택" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">카테고리 없음</SelectItem>
+                <SelectItem value="none">카테고리 없음</SelectItem>
                 {categories.map(category => (
                   <SelectItem key={category.category_id} value={category.category_id.toString()}>
                     {category.name}
@@ -1079,18 +1079,18 @@ function ProfileContent() {
                 defaultValue={selectedRoomId || "all"} 
                 onValueChange={(value) => setSelectedRoomId(value === "all" ? null : value)}
               >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="모든 기도방" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">모든 기도방</SelectItem>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="모든 기도방" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">모든 기도방</SelectItem>
                   {userRooms.map(room => (
                     <SelectItem key={room.room_id} value={room.room_id}>
                       {room.title}
                     </SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
+              </SelectContent>
+            </Select>
             </div>
           </div>
           {/* 새 기도제목 추가 버튼 */}
