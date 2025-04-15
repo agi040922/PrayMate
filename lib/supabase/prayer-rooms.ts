@@ -306,34 +306,65 @@ export async function joinPrayerRoom(data: {
  * 기도방 이름으로 검색
  */
 export async function searchPrayerRoomsByName(searchTerm: string) {
-  const { data, error } = await supabase
-    .from("prayer_rooms")
-    .select("*")
-    // ilike를 사용하여 대소문자 구분 없이 부분 일치 검색
-    .ilike("title", `%${searchTerm}%`)
-    .order("created_at", { ascending: false })
+  // 검색어가 없거나 너무 짧은 경우 처리
+  if (!searchTerm || searchTerm.trim().length < 1) {
+    return [];
+  }
   
-  if (error) throw error
-  return data
+  try {
+    const sanitizedTerm = searchTerm.trim().replace(/[%_]/g, ''); // SQL 인젝션 방지를 위한 기본 처리
+    
+    const { data, error } = await supabase
+      .from("prayer_rooms")
+      .select("*")
+      .ilike("title", `%${sanitizedTerm}%`)
+      .eq("is_public", true)
+      .limit(20);
+    
+    if (error) {
+      console.error("기도방 이름 검색 오류:", error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error("기도방 이름 검색 예외:", error);
+    return [];
+  }
 }
 
 /**
- * 기도방 ID로 검색 (정확한 일치)
+ * 특정 기도방 ID로 검색
  */
 export async function searchPrayerRoomById(roomId: string) {
-  const { data, error } = await supabase
-    .from("prayer_rooms")
-    .select("*")
-    .eq("room_id", roomId)
-    .single()
-  
-  if (error && error.code === "PGRST116") {
-    // 결과가 없을 경우
-    return null
+  // 유효하지 않은 ID 처리
+  if (!roomId || typeof roomId !== 'string' || roomId.trim() === '') {
+    return null;
   }
   
-  if (error) throw error
-  return data
+  try {
+    const sanitizedId = roomId.trim();
+    
+    const { data, error } = await supabase
+      .from("prayer_rooms")
+      .select("*")
+      .eq("room_id", sanitizedId)
+      .single();
+    
+    if (error) {
+      if (error.code === "PGRST116") {
+        // 결과가 없는 경우
+        return null;
+      }
+      console.error("기도방 ID 검색 오류:", error);
+      return null;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("기도방 ID 검색 예외:", error);
+    return null;
+  }
 }
 
 /**
@@ -421,4 +452,66 @@ export async function getUserRooms(userId: string) {
     joined_at: item.joined_at,
     ...item.prayer_rooms
   }))
+}
+
+/**
+ * 기도방 나가기
+ * @param roomId 기도방 ID
+ * @param userId 나가려는 사용자 ID
+ * @returns 성공 시 { success: true }, 에러 발생 시 에러 throw
+ */
+export async function leavePrayerRoom(roomId: string, userId: string) {
+  try {
+    // 1. 해당 방의 참여자 목록 조회
+    const { data: participants, error: participantsError } = await supabase
+      .from("room_participants")
+      .select("participant_id, user_id, role")
+      .eq("room_id", roomId)
+    
+    if (participantsError) throw participantsError
+    
+    // 2. 현재 참여자가 마지막 한 명인지 확인
+    if (participants.length === 1 && participants[0].user_id === userId) {
+      // 마지막 한 명이면 방 자체를 삭제
+      await deletePrayerRoom(roomId)
+      return { success: true, action: "room_deleted" }
+    }
+    
+    // 3. 현재 사용자의 participant_id 찾기
+    const currentParticipant = participants.find(p => p.user_id === userId)
+    if (!currentParticipant) throw new Error("사용자가 이 방에 참여하고 있지 않습니다.")
+    
+    // 4. 현재 사용자가 관리자인지 확인
+    if (currentParticipant.role === "admin") {
+      // 4-1. 다른 관리자가 있는지 확인
+      const otherAdmins = participants.filter(p => 
+        p.role === "admin" && p.user_id !== userId
+      )
+      
+      // 4-2. 다른 관리자가 없다면 랜덤으로 한 명에게 관리자 권한 부여
+      if (otherAdmins.length === 0) {
+        // 자신 외의 다른 참여자들
+        const otherParticipants = participants.filter(p => p.user_id !== userId)
+        
+        // 랜덤으로 한 명 선택 (첫 번째 참여자로 변경)
+        const newAdmin = otherParticipants[0]
+        
+        // 새 관리자로 업데이트
+        await updateParticipantRole(newAdmin.participant_id, "admin")
+      }
+    }
+    
+    // 5. 현재 사용자 참여 정보 삭제
+    const { error: removeError } = await supabase
+      .from("room_participants")
+      .delete()
+      .eq("participant_id", currentParticipant.participant_id)
+    
+    if (removeError) throw removeError
+    
+    return { success: true, action: "left_room" }
+  } catch (error) {
+    console.error("기도방 나가기 오류:", error)
+    throw error
+  }
 }

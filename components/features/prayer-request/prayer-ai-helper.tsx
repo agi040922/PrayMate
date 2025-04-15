@@ -129,10 +129,10 @@ export function PrayerAIHelper({
 
   return (
     <div className="relative">
-      {/* AI 버튼 - 새로운 디자인 */}
+      {/* AI 버튼 - 새 위치로 수정 */}
       <Button
         type="button"
-        className="absolute right-0 -top-10 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-md hover:shadow-lg transform hover:-translate-y-1 transition-all duration-200 flex items-center gap-1 rounded-lg border-none font-medium"
+        className="absolute right-0 top-0 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-md hover:shadow-lg transform hover:-translate-y-1 transition-all duration-200 flex items-center gap-1 rounded-lg border-none font-medium"
         onClick={() => setIsOpen(!isOpen)}
         size="sm"
       >
@@ -158,9 +158,9 @@ export function PrayerAIHelper({
         </div>
       </Button>
 
-      {/* AI 도우미 패널 - 옆으로 열리도록 수정 */}
+      {/* AI 도우미 패널 - 위치 조정 */}
       {isOpen && (
-        <Card className="absolute -right-96 top-0 w-80 z-50 shadow-xl border-2 border-blue-100 dark:border-blue-900">
+        <Card className="absolute -right-80 top-6 w-80 z-50 shadow-xl border-2 border-blue-100 dark:border-blue-900">
           <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50">
             <div className="flex justify-between items-center">
               <CardTitle className="text-sm font-medium flex items-center">

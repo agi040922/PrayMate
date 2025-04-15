@@ -26,9 +26,10 @@ interface PrayerRoom {
 
 interface PrayerRoomListProps {
   onManageRoom?: (roomId: string) => void
+  onViewMembers?: (roomId: string) => void
 }
 
-export function PrayerRoomList({ onManageRoom }: PrayerRoomListProps) {
+export function PrayerRoomList({ onManageRoom, onViewMembers }: PrayerRoomListProps) {
   const [rooms, setRooms] = useState<PrayerRoom[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
@@ -111,16 +112,19 @@ export function PrayerRoomList({ onManageRoom }: PrayerRoomListProps) {
             </div>
           </CardContent>
           <CardFooter className="flex justify-between pt-2">
-            {/* 기도방 입장 버튼 */}
-            <Button variant="outline" size="sm" asChild>
-              <Link href={`/prayer-room/${room.room_id}`}>입장하기</Link>
-            </Button>
-            {/* 기도방 관리 버튼 (관리자인 경우만 표시) */}
-            {room.role === "admin" && onManageRoom && (
-              <Button variant="ghost" size="sm" onClick={() => onManageRoom(room.room_id)}>
-                <Settings className="mr-2 h-4 w-4" />
-                관리
-              </Button>
+            {/* 관리자인 경우 관리 버튼 표시, 아니면 구성원 보기 버튼 표시 */}
+            {room.role === "admin" ? (
+              onManageRoom && (
+                <Button variant="outline" size="sm" onClick={() => onManageRoom(room.room_id)}>
+                  관리
+                </Button>
+              )
+            ) : (
+              onViewMembers && (
+                <Button variant="outline" size="sm" onClick={() => onViewMembers(room.room_id)}>
+                  구성원 보기
+                </Button>
+              )
             )}
           </CardFooter>
         </Card>

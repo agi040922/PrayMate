@@ -150,14 +150,14 @@ export function PrayerRequestForm({ roomId, onClose }: PrayerRequestFormProps) {
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[550px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>새 기도제목 등록</DialogTitle>
             <DialogDescription>기도제목을 작성하여 공유해보세요. 함께 기도하는 공동체가 응원합니다.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="flex flex-row justify-between space-x-4">
+            <div className="flex flex-col md:flex-row justify-between md:space-x-4 space-y-4 md:space-y-0">
               {/* 왼쪽: 폼 영역 */}
               <div className="flex-1 space-y-4">
                 <div className="grid gap-2">
@@ -226,7 +226,7 @@ export function PrayerRequestForm({ roomId, onClose }: PrayerRequestFormProps) {
               </div>
               
               {/* 오른쪽: AI 도우미 */}
-              <div className="flex relative min-w-[280px]">
+              <div className="flex relative min-w-[200px]">
                 <PrayerAIHelper
                   title={title}
                   content={content}

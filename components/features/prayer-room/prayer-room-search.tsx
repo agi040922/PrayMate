@@ -48,29 +48,61 @@ export function PrayerRoomSearch({ onJoin }: PrayerRoomSearchProps) {
     setShowResults(true)
     
     try {
+      let results: SearchResult[] = [];
+      
       if (searchType === "name") {
         // 이름으로 검색
-        const results = await searchPrayerRoomsByName(searchTerm)
-        setSearchResults(results || [])
+        try {
+          const nameResults = await searchPrayerRoomsByName(searchTerm);
+          results = nameResults || [];
+        } catch (error) {
+          console.error("이름 검색 오류:", error);
+          results = [];
+        }
       } else {
-        // ID로 검색
-        const result = await searchPrayerRoomById(searchTerm)
-        if (result) {
-          setSearchResults([result])
-        } else {
-          setSearchResults([])
+        // ID로 검색 - 특수문자나 유효하지 않은 ID 처리
+        if (!/^[a-zA-Z0-9-_]+$/.test(searchTerm)) {
+          toast({
+            title: "유효하지 않은 기도방 코드",
+            description: "기도방 코드는 영문, 숫자, 하이픈(-), 언더스코어(_)만 포함할 수 있습니다.",
+            variant: "destructive",
+          });
+          setSearchResults([]);
+          setIsSearching(false);
+          return;
+        }
+        
+        try {
+          const result = await searchPrayerRoomById(searchTerm);
+          results = result ? [result] : [];
+        } catch (error) {
+          console.error("ID 검색 오류:", error);
+          results = [];
         }
       }
+      
+      setSearchResults(results);
+      
+      // 결과가 없는 경우 메시지 표시
+      if (results.length === 0) {
+        toast({
+          title: "검색 결과 없음",
+          description: searchType === "name" 
+            ? "입력한 이름과 일치하는 기도방을 찾을 수 없습니다." 
+            : "입력한 코드와 일치하는 기도방을 찾을 수 없습니다.",
+          variant: "default",
+        });
+      }
     } catch (error: any) {
-      console.error("기도방 검색 오류:", error)
+      console.error("기도방 검색 오류:", error);
       toast({
         title: "검색 오류",
-        description: error.message || "기도방 검색 중 오류가 발생했습니다.",
+        description: "기도방 검색 중 오류가 발생했습니다. 다시 시도해주세요.",
         variant: "destructive",
-      })
-      setSearchResults([])
+      });
+      setSearchResults([]);
     } finally {
-      setIsSearching(false)
+      setIsSearching(false);
     }
   }
   

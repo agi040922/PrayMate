@@ -51,7 +51,9 @@ import {
   updatePrayerRequest, 
   updateAnsweredStatus, 
   createPrayerAnswer, 
-  deletePrayerRequest 
+  deletePrayerRequest,
+  getPrayerAnswers,
+  deletePrayerAnswer
 } from "@/lib/supabase/prayer-requests"
 
 // 프로필 편집 다이얼로그 컴포넌트
@@ -359,10 +361,32 @@ function PrayerEditDialog({
   const [bibleReference, setBibleReference] = useState(prayer?.bible_verse?.reference || "")
   const [bibleText, setBibleText] = useState(prayer?.bible_verse?.text || "")
   const [categoryId, setCategoryId] = useState<number | undefined>(prayer?.category_id)
+  const [isAnswered, setIsAnswered] = useState(prayer?.is_answered || false)
+  const [answerContent, setAnswerContent] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   
   const { categories } = useProfile()
   const { toast } = useToast()
+  
+  // 응답 내용 불러오기
+  useEffect(() => {
+    const loadAnswers = async () => {
+      if (prayer?.is_answered && prayer?.request_id) {
+        try {
+          const answers = await getPrayerAnswers(prayer.request_id)
+          if (answers && answers.length > 0) {
+            setAnswerContent(answers[0].content || "")
+          }
+        } catch (error) {
+          console.error("응답 내용 불러오기 실패:", error)
+        }
+      }
+    }
+    
+    if (open) {
+      loadAnswers()
+    }
+  }, [open, prayer])
   
   // 기도제목 저장 함수
   const handleSave = async () => {
@@ -375,9 +399,20 @@ function PrayerEditDialog({
       return
     }
     
+    // 응답 표시하는데 응답 내용이 없는 경우
+    if (isAnswered && !answerContent.trim()) {
+      toast({
+        title: "입력 오류",
+        description: "응답 내용을 입력해주세요.",
+        variant: "destructive"
+      })
+      return
+    }
+    
     setIsSubmitting(true)
     
     try {
+      // 1. 기도제목 정보 업데이트
       await updatePrayerRequest(prayer.request_id, {
         title,
         content,
@@ -388,6 +423,40 @@ function PrayerEditDialog({
           text: bibleText
         } : undefined
       })
+      
+      // 2. 응답 상태 변경
+      if (isAnswered !== prayer.is_answered) {
+        await updateAnsweredStatus(prayer.request_id, isAnswered)
+      }
+      
+      // 3. 응답된 경우 응답 내용 저장
+      if (isAnswered && answerContent.trim()) {
+        // 기존 응답이 있는지 확인
+        const answers = await getPrayerAnswers(prayer.request_id)
+        
+        if (answers && answers.length > 0) {
+          // 기존 응답을 삭제하고 새로 만드는 방식으로 구현
+          try {
+            // 1. 기존 응답을 삭제
+            await deletePrayerAnswer(answers[0].answer_id)
+            
+            // 2. 새 응답 추가
+            await createPrayerAnswer({
+              request_id: prayer.request_id,
+              content: answerContent
+            })
+          } catch (error) {
+            console.error("응답 업데이트 실패:", error)
+            throw error
+          }
+        } else {
+          // 새 응답 추가
+          await createPrayerAnswer({
+            request_id: prayer.request_id,
+            content: answerContent
+          })
+        }
+      }
       
       toast({
         title: "기도제목 수정 완료",
@@ -408,6 +477,7 @@ function PrayerEditDialog({
     }
   }
   
+  //기도제목 수정
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
@@ -482,6 +552,30 @@ function PrayerEditDialog({
             </div>
             <p className="text-xs text-muted-foreground">성경구절 참조와 내용을 함께 입력하세요.</p>
           </div>
+          
+          {/* 응답 여부 */}
+          <div className="flex items-center gap-2">
+            <Checkbox 
+              id="answered" 
+              checked={isAnswered} 
+              onCheckedChange={(checked) => setIsAnswered(checked === true)}
+            />
+            <Label htmlFor="answered" className="cursor-pointer">기도 응답 표시</Label>
+          </div>
+          
+          {/* 응답 내용 입력 (응답 체크한 경우에만 표시) */}
+          {isAnswered && (
+            <div className="grid gap-2">
+              <Label htmlFor="answer">응답 내용</Label>
+              <Textarea 
+                id="answer" 
+                value={answerContent} 
+                onChange={(e) => setAnswerContent(e.target.value)} 
+                placeholder="하나님의 응답을 기록하세요"
+                className="h-24"
+              />
+            </div>
+          )}
           
           {/* 익명 여부 */}
           <div className="flex items-center gap-2">
@@ -946,6 +1040,11 @@ function ProfileContent() {
     setShowManageDialog(true)
   }
   
+  const handleViewMembers = (roomId: string) => {
+    setSelectedRoomId(roomId)
+    setShowManageDialog(true)
+  }
+  
   // 로그아웃 처리 함수
   const handleLogout = async () => {
     try {
@@ -1206,7 +1305,10 @@ function ProfileContent() {
             </Button>
           </div>
           {/* 내가 참여 중인 기도방 목록 */}
-          <PrayerRoomList onManageRoom={handleManageRoom} />
+          <PrayerRoomList 
+            onManageRoom={handleManageRoom} 
+            onViewMembers={handleViewMembers} 
+          />
         </TabsContent>
       </Tabs>
 
@@ -1216,6 +1318,7 @@ function ProfileContent() {
           open={showManageDialog} 
           onOpenChange={setShowManageDialog} 
           roomId={selectedRoomId} 
+          isAdmin={userRooms.find(room => room.room_id === selectedRoomId)?.role === "admin"}
         />
       )}
       

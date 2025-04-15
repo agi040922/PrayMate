@@ -673,4 +673,17 @@ export async function getUserParticipatingRoomPrayerRequests(userId: string, opt
   }
   
   return prayerRequests
+}
+
+/**
+ * 기도 응답 삭제
+ */
+export async function deletePrayerAnswer(answerId: string) {
+  const { error } = await supabase
+    .from("prayer_answers")
+    .delete()
+    .eq("answer_id", answerId)
+  
+  if (error) throw error
+  return true
 } 

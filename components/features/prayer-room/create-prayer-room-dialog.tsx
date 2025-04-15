@@ -81,7 +81,7 @@ export function ManagePrayerRoomDialog({
   const [roomDescription, setRoomDescription] = useState("")
   const [isPublic, setIsPublic] = useState(false)
   
-  const { toast } = useAuth()
+  const { toast } = useToast()
   const { user } = useAuth()
   
   // 기도방 정보 불러오기
