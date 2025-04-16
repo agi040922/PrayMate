@@ -10,8 +10,21 @@ import {
   BookOpen,
   CheckCircle,
   MessageCircle,
-  HeartHandshake 
+  HeartHandshake,
+  Plus, 
+  ChevronUp
 } from "lucide-react"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { useToast } from "@/components/ui/use-toast"
 import { useProfile } from "@/lib/context/ProfileContext"
 import { formatDistanceToNow } from 'date-fns'
@@ -185,7 +198,7 @@ export function PrayerRequestCard({ prayer }: PrayerRequestCardProps) {
                     <div key={comment.comment_id} className="flex gap-2">
                       <Avatar className="h-6 w-6">
                         <AvatarFallback className="text-xs">
-                          {comment.user?.name ? comment.user.name.charAt(0) : '?'}
+                          {comment.user?.name ? comment.user.name.charAt(0).toUpperCase() : '?'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
@@ -221,26 +234,70 @@ export function PrayerRequestCard({ prayer }: PrayerRequestCardProps) {
                 <div className="flex flex-wrap gap-2">
                   {prayer.reactions.reduce((acc: any, reaction: any) => {
                     if (!acc[reaction.reaction_type]) {
-                      acc[reaction.reaction_type] = 0
+                      acc[reaction.reaction_type] = {
+                        count: 0,
+                        users: []
+                      }
                     }
-                    acc[reaction.reaction_type]++
+                    acc[reaction.reaction_type].count++
+                    
+                    // 반응한 사용자 정보 추가
+                    if (reaction.user && reaction.user.name) {
+                      acc[reaction.reaction_type].users.push(reaction.user.name)
+                    }
+                    
                     return acc
                   }, {}) &&
                     Object.entries(
                       prayer.reactions.reduce((acc: any, reaction: any) => {
                         if (!acc[reaction.reaction_type]) {
-                          acc[reaction.reaction_type] = 0
+                          acc[reaction.reaction_type] = {
+                            count: 0,
+                            users: []
+                          }
                         }
-                        acc[reaction.reaction_type]++
+                        acc[reaction.reaction_type].count++
+                        
+                        // 반응한 사용자 정보 추가
+                        if (reaction.user && reaction.user.name) {
+                          acc[reaction.reaction_type].users.push(reaction.user.name)
+                        }
+                        
                         return acc
                       }, {})
-                    ).map(([type, count]: [string, any]) => (
-                      <Badge key={type} variant="secondary" className="text-xs">
-                        {type === 'praying' ? '🙏 기도' : 
-                         type === 'support' ? '💪 응원' : 
-                         type === 'answered' ? '✅ 응답' : type}
-                        <span className="ml-1 font-normal">{count}</span>
-                      </Badge>
+                    ).map(([type, data]: [string, any]) => (
+                      <div key={type} className="flex items-center">
+                        <Badge variant="secondary" className="text-xs">
+                          {type === 'praying' ? '🙏 기도' : 
+                           type === 'support' ? '💪 응원' : 
+                           type === 'answered' ? '✅ 응답' : type}
+                          <span className="ml-1 font-normal">{data.count}</span>
+                        </Badge>
+                        
+                        {data.users.length > 0 && (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-5 w-5 ml-1 rounded-full">
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-2" align="start">
+                              <div className="text-xs font-medium mb-1">
+                                {type === 'praying' ? '함께 기도하는 사람들' : 
+                                 type === 'support' ? '응원하는 사람들' : 
+                                 type === 'answered' ? '응답됨에 기뻐하는 사람들' : `${type} 반응한 사람들`}
+                              </div>
+                              <div className="space-y-1 max-h-32 overflow-y-auto">
+                                {Array.from(new Set(data.users) as Set<string>).map((name, idx) => (
+                                  <div key={idx} className="text-xs py-0.5 px-1 hover:bg-muted rounded-sm">
+                                    {name}
+                                  </div>
+                                ))}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        )}
+                      </div>
                     ))}
                 </div>
               </div>

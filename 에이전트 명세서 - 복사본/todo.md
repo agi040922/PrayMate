@@ -28,3 +28,4 @@ user id->room id-> participants id->personal prayer id-> weekly/monthly/yearly
  16.공지 기능 전체 대상 수정 가능
  17.이미지 쓸 수 있도록 storage
  18.기본적으로 nextjs 구조 파악해야. 함수 못찾겠어. 
+ 19.프로필->프로필 편집 기능구현 트러블 슈팅

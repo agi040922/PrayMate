@@ -398,7 +398,17 @@ export async function getReactions(requestId: string) {
     .eq("request_id", requestId)
   
   if (error) throw error
-  return data
+  
+  // 사용자 정보 접근을 명확하게 변환
+  const reactionsWithUserInfo = data?.map(reaction => {
+    return {
+      ...reaction,
+      user: reaction.users,  // 사용자 정보를 user 필드로 복사
+      users: undefined       // 원래 users 필드 제거
+    }
+  }) || []
+  
+  return reactionsWithUserInfo
 }
 
 /**
@@ -469,7 +479,18 @@ export async function getComments(requestId: string) {
     .order("created_at", { ascending: true })
   
   if (error) throw error
-  return data
+  
+  // 사용자 정보 접근을 더 명확하게 변환
+  const commentsWithUserInfo = data?.map(comment => {
+    // users 필드에서 사용자 정보를 가져와 comment 객체의 user 필드로 이동
+    return {
+      ...comment,
+      user: comment.users,  // 사용자 정보를 user 필드로 복사
+      users: undefined      // 원래 users 필드 제거
+    }
+  }) || []
+  
+  return commentsWithUserInfo
 }
 
 /**

@@ -105,11 +105,11 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     }
   }
   
-  // 응답된 기도 요청의 상세 데이터 불러오기 (응답, 댓글, 반응 등)
-  const fetchAnsweredPrayerRequestDetails = async (requests: PrayerRequest[]) => {
+  // 기도 요청의 상세 데이터 불러오기 (응답, 댓글, 반응 등)
+  const fetchPrayerRequestDetails = async (requests: PrayerRequest[]) => {
     if (!requests || requests.length === 0) return []
     
-    // 각 응답된 기도제목의 상세 정보 불러오기
+    // 각 기도제목의 상세 정보 불러오기
     const detailedRequests = await Promise.all(
       requests.map(async (request) => {
         try {
@@ -144,12 +144,12 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
     
     setLoadingPrayerRequests(true)
     try {
-      // 모든 기도 요청
-      const requests = await getUserPrayerRequests(user.id, {
+      // 응답 대기중인 기도 요청
+      const unansweredRequests = await getUserPrayerRequests(user.id, {
+        is_answered: false,
         limit: 50,
         room_id: selectedRoomId || undefined
       })
-      setUserPrayerRequests(requests.filter((req: any) => !req.is_answered))
       
       // 응답된 기도 요청
       const answeredRequests = await getUserPrayerRequests(user.id, {
@@ -158,8 +158,11 @@ export const ProfileProvider = ({ children }: { children: ReactNode }) => {
         room_id: selectedRoomId || undefined
       })
       
-      // 응답된 기도제목의 상세 정보 불러오기
-      const detailedAnsweredRequests = await fetchAnsweredPrayerRequestDetails(answeredRequests)
+      // 모든 기도제목의 상세 정보 불러오기
+      const detailedUnansweredRequests = await fetchPrayerRequestDetails(unansweredRequests)
+      const detailedAnsweredRequests = await fetchPrayerRequestDetails(answeredRequests)
+      
+      setUserPrayerRequests(detailedUnansweredRequests)
       setAnsweredPrayerRequests(detailedAnsweredRequests)
     } catch (error) {
       console.error('기도 요청 불러오기 실패:', error)
