@@ -20,10 +20,6 @@ user id->room id-> participants id->personal prayer id-> weekly/monthly/yearly
 
  13.prayer-room에서 기도제목 수정이 없음. 
  14.모바일 반응형 체크 처음부터 끝까지.
- 15.프로필
- -내 기도방->새기도방 생성->prayer-room 에 있는 기도방 생성 함수 참고
- -내가 작성한 기도제목->리액션만 보이도록 해주자. 
- -새 기도제목 작성은 없애자
 
  16.공지 기능 전체 대상 수정 가능
  17.이미지 쓸 수 있도록 storage
