@@ -146,20 +146,7 @@ export function CreatePrayerRoomDialog({ open, onOpenChange }: CreatePrayerRoomD
                   : "비공개 기도방은 초대를 통해서만 참여할 수 있습니다."}
               </p>
             </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="invite-only">초대 코드로만 참여 가능</Label>
-                <p className="text-xs text-muted-foreground">
-                  활성화하면 초대 코드가 있는 사용자만 참여할 수 있습니다.
-                </p>
-              </div>
-              <Switch
-                id="invite-only"
-                checked={inviteOnly}
-                onCheckedChange={setInviteOnly}
-                disabled={roomType === "private"}
-              />
-            </div>
+            
           </div>
           <DialogFooter>
             <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
