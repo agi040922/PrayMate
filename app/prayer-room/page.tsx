@@ -11,7 +11,7 @@ import { PrayerRoomSidebar } from "@/components/features/prayer-room/prayer-room
 import { RoomSummary } from "@/components/features/prayer-room/room-summary"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PlusIcon, LayoutGrid, List, Menu, Bell, User, Download, Search, Settings, LogOut } from "lucide-react"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import Link from "next/link"
 import {
   DropdownMenu,
@@ -80,7 +80,7 @@ export default function PrayerRoomPage() {
         title: "로그아웃 성공",
         description: "성공적으로 로그아웃되었습니다.",
       })
-      router.push("/login")
+      router.push("/")
     } catch (error) {
       console.error(error)
       toast({
@@ -122,6 +122,7 @@ export default function PrayerRoomPage() {
           </SheetTrigger>
           <SheetContent side="left" className="w-72 p-0">
             <PrayerRoomSidebar className="h-full" onSelect={handleRoomSelect} />
+            <SheetTitle>사이드바 열기</SheetTitle>
           </SheetContent>
         </Sheet>
 

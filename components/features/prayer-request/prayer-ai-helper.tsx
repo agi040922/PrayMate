@@ -29,7 +29,6 @@ export function PrayerAIHelper({
   onApplyContent,
   onApplyVerse
 }: PrayerAIHelperProps) {
-  const [isOpen, setIsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("refine")
   const [isLoading, setIsLoading] = useState(false)
   const [refinedTitle, setRefinedTitle] = useState("")
@@ -128,155 +127,108 @@ export function PrayerAIHelper({
   }
 
   return (
-    <div className="relative">
-      {/* AI 버튼 - 새 위치로 수정 */}
-      <Button
-        type="button"
-        className="absolute right-0 top-0 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-md hover:shadow-lg transform hover:-translate-y-1 transition-all duration-200 flex items-center gap-1 rounded-lg border-none font-medium"
-        onClick={() => setIsOpen(!isOpen)}
-        size="sm"
-      >
-        <div className="flex items-center gap-1 px-1">
-          <svg 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            className="h-5 w-5 animate-pulse" 
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path 
-              d="M12 4C7 4 2.73 7.11 1 11.5C2.73 15.89 7 19 12 19C17 19 21.27 15.89 23 11.5C21.27 7.11 17 4 12 4ZM12 16.5C9.24 16.5 7 14.26 7 11.5C7 8.74 9.24 6.5 12 6.5C14.76 6.5 17 8.74 17 11.5C17 14.26 14.76 16.5 12 16.5ZM12 8.5C10.34 8.5 9 9.84 9 11.5C9 13.16 10.34 14.5 12 14.5C13.66 14.5 15 13.16 15 11.5C15 9.84 13.66 8.5 12 8.5Z" 
-              fill="currentColor"
-            />
-            <path 
-              d="M12 14.5C13.6569 14.5 15 13.1569 15 11.5C15 9.84315 13.6569 8.5 12 8.5C10.3431 8.5 9 9.84315 9 11.5C9 13.1569 10.3431 14.5 12 14.5Z" 
-              fill="white" 
-              fillOpacity="0.5"
-            />
-          </svg>
-          <span className="font-bold">AI 도우미</span>
-          <span className="px-1 py-0.5 bg-white bg-opacity-20 rounded-md text-xs ml-1">신규</span>
-        </div>
-      </Button>
-
-      {/* AI 도우미 패널 - 위치 조정 */}
-      {isOpen && (
-        <Card className="absolute -right-80 top-6 w-80 z-50 shadow-xl border-2 border-blue-100 dark:border-blue-900">
-          <CardHeader className="pb-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50">
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-sm font-medium flex items-center">
-                <svg 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  className="h-4 w-4 mr-2 text-blue-500" 
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path 
-                    d="M12 4C7 4 2.73 7.11 1 11.5C2.73 15.89 7 19 12 19C17 19 21.27 15.89 23 11.5C21.27 7.11 17 4 12 4Z" 
-                    fill="currentColor"
-                  />
-                </svg>
-                AI 기도 도우미
-              </CardTitle>
-              <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)}>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M18 6 6 18" />
-                  <path d="m6 6 12 12" />
-                </svg>
-                <span className="sr-only">닫기</span>
-              </Button>
-            </div>
-            <CardDescription className="text-xs">
-              기도제목을 정리하고 관련 성경 구절을 추천해드려요
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="refine">내용 다듬기</TabsTrigger>
-                <TabsTrigger value="verses">성경구절 추천</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="refine" className="space-y-4">
-                <div className="space-y-2">
-                  <Button 
-                    size="sm" 
-                    className="w-full bg-blue-500 hover:bg-blue-600" 
-                    onClick={handleRefine}
-                    disabled={isLoading || (!title && !content)}
-                  >
-                    {isLoading ? <Spinner className="mr-2" /> : null}
-                    내용 다듬기
-                  </Button>
-                  
-                  {refinedTitle && (
-                    <div className="space-y-1 mt-2 p-2 border rounded-md border-blue-100 dark:border-blue-900">
-                      <div className="text-xs font-medium">다듬어진 제목:</div>
-                      <p className="text-sm">{refinedTitle}</p>
-                      <Button size="sm" variant="outline" className="w-full mt-1" onClick={applyRefinedTitle}>
-                        제목에 적용하기
-                      </Button>
-                    </div>
-                  )}
-                  
-                  {refinedContent && (
-                    <div className="space-y-1 mt-2 p-2 border rounded-md border-blue-100 dark:border-blue-900">
-                      <div className="text-xs font-medium">다듬어진 내용:</div>
-                      <p className="text-sm">{refinedContent}</p>
-                      <Button size="sm" variant="outline" className="w-full mt-1" onClick={applyRefinedContent}>
-                        내용에 적용하기
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="verses" className="space-y-4">
+    <div className="w-full">
+      <div className="p-2">
+        <CardHeader className="p-3 pb-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/50 dark:to-purple-950/50 rounded-t-lg">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-sm font-medium flex items-center">
+              <svg 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                className="h-4 w-4 mr-2 text-blue-500" 
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path 
+                  d="M12 4C7 4 2.73 7.11 1 11.5C2.73 15.89 7 19 12 19C17 19 21.27 15.89 23 11.5C21.27 7.11 17 4 12 4Z" 
+                  fill="currentColor"
+                />
+              </svg>
+              AI 기도 도우미
+            </CardTitle>
+          </div>
+          <CardDescription className="text-xs">
+            기도제목을 정리하고 관련 성경 구절을 추천해드려요
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-3 pt-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="refine">내용 다듬기</TabsTrigger>
+              <TabsTrigger value="verses">성경구절 추천</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="refine" className="space-y-4">
+              <div className="space-y-2">
                 <Button 
                   size="sm" 
-                  className="w-full bg-purple-500 hover:bg-purple-600" 
-                  onClick={handleRecommendVerses}
-                  disabled={isLoading || !content}
+                  className="w-full bg-blue-500 hover:bg-blue-600" 
+                  onClick={handleRefine}
+                  disabled={isLoading || (!title && !content)}
+                  type="button"
                 >
                   {isLoading ? <Spinner className="mr-2" /> : null}
-                  성경 구절 추천받기
+                  내용 다듬기
                 </Button>
                 
-                {bibleVerses.length > 0 && (
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {bibleVerses.map((verse, index) => (
-                      <div key={index} className="p-2 border rounded-md border-purple-100 dark:border-purple-900">
-                        <div className="flex justify-between items-center">
-                          <Badge variant="outline" className="bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300">
-                            {verse.reference}
-                          </Badge>
-                          <Button size="sm" variant="ghost" onClick={() => applyVerse(verse)}>
-                            적용
-                          </Button>
-                        </div>
-                        <p className="text-xs mt-1">{verse.text}</p>
-                        <p className="text-xs text-gray-500 mt-1">{verse.relevance}</p>
-                      </div>
-                    ))}
+                {refinedTitle && (
+                  <div className="space-y-1 mt-2 p-2 border rounded-md border-blue-100 dark:border-blue-900">
+                    <div className="text-xs font-medium">다듬어진 제목:</div>
+                    <p className="text-sm">{refinedTitle}</p>
+                    <Button size="sm" variant="outline" className="w-full mt-1" onClick={applyRefinedTitle} type="button">
+                      제목에 적용하기
+                    </Button>
                   </div>
                 )}
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      )}
+                
+                {refinedContent && (
+                  <div className="space-y-1 mt-2 p-2 border rounded-md border-blue-100 dark:border-blue-900">
+                    <div className="text-xs font-medium">다듬어진 내용:</div>
+                    <p className="text-sm">{refinedContent}</p>
+                    <Button size="sm" variant="outline" className="w-full mt-1" onClick={applyRefinedContent} type="button">
+                      내용에 적용하기
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="verses" className="space-y-4">
+              <Button 
+                size="sm" 
+                className="w-full bg-purple-500 hover:bg-purple-600" 
+                onClick={handleRecommendVerses}
+                disabled={isLoading || !content}
+                type="button"
+              >
+                {isLoading ? <Spinner className="mr-2" /> : null}
+                성경 구절 추천받기
+              </Button>
+              
+              {bibleVerses.length > 0 && (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {bibleVerses.map((verse, index) => (
+                    <div key={index} className="p-2 border rounded-md border-purple-100 dark:border-purple-900">
+                      <div className="flex justify-between items-center">
+                        <Badge variant="outline" className="bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300">
+                          {verse.reference}
+                        </Badge>
+                        <Button size="sm" variant="ghost" onClick={() => applyVerse(verse)} type="button">
+                          적용
+                        </Button>
+                      </div>
+                      <p className="text-xs mt-1">{verse.text}</p>
+                      <p className="text-xs text-gray-500 mt-1">{verse.relevance}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </div>
     </div>
   )
-} 
+}
 // 1. AI 도우미 버튼 개선
 // 이전의 단순한 버튼에서 그라데이션 효과가 적용된 화려한 디자인으로 변경
 // 애니메이션 효과가 있는 아이콘 추가

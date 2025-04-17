@@ -122,7 +122,7 @@ export function PrayerRoomList({ onManageRoom, onViewMembers }: PrayerRoomListPr
             ) : (
               onViewMembers && (
                 <Button variant="outline" size="sm" onClick={() => onViewMembers(room.room_id)}>
-                  구성원 보기
+                  정보
                 </Button>
               )
             )}

@@ -19,9 +19,11 @@ import {
   CheckCircle, 
   BookOpen, 
   MessageCircle, 
-  HeartHandshake 
+  HeartHandshake,
+  ArrowLeft
 } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { ManagePrayerRoomDialog } from "@/components/features/prayer-room/manage-prayer-room-dialog"
 import { CreatePrayerRoomDialog } from "@/components/features/prayer-room/real-create-prayer-room-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -41,6 +43,7 @@ export function ProfileContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [prayerFilter, setPrayerFilter] = useState<"all" | "answered" | "unanswered">("all")
   const { toast } = useToast()
+  const router = useRouter()
   
   const { 
     userPrayerRequests,
@@ -104,7 +107,7 @@ export function ProfileContent() {
       })
       
       // 로그인 페이지로 리디렉션
-      window.location.href = "/auth/login"
+      window.location.href = "/"
     } catch (error) {
       console.error("로그아웃 실패:", error)
       toast({
@@ -113,6 +116,11 @@ export function ProfileContent() {
         variant: "destructive"
       })
     }
+  }
+  
+  // 이전 페이지로 돌아가기
+  const handleGoBack = () => {
+    router.back()
   }
   
   // 사용자 프로필 이미지의 이니셜 생성
@@ -153,6 +161,19 @@ export function ProfileContent() {
 
   return (
     <div className="container mx-auto p-4 md:p-6">
+      {/* 뒤로 가기 버튼 */}
+      <div className="mb-4">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="flex items-center text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+          onClick={handleGoBack}
+        >
+          <ArrowLeft className="mr-1 h-4 w-4" />
+          뒤로 가기 
+        </Button>
+      </div>
+      
       {/* 프로필 헤더 섹션 */}
       <div className="mb-8 flex flex-col items-center justify-between gap-4 md:flex-row">
         <div className="flex items-center gap-4">

@@ -100,20 +100,75 @@ export async function createUserProfile(
 
 // 사용자 정보 업데이트
 export async function updateUserProfile(userData: { name?: string, contact?: string }) {
-  const user = await getCurrentUser() //auth에서 정보 가져오기기
+  const user = await getCurrentUser() // auth에서 사용자 ID만 가져오기
   
   if (!user) throw new AuthError('User not authenticated')
   
-  const { data, error } = await supabase
-    .from('users')
-    .upsert({
-      user_id: user.id,
-      ...userData
-    })
-    .select()
+  console.log("업데이트할 사용자 ID:", user.id)
+  console.log("업데이트할 데이터:", userData)
   
-  if (error) throw error
-  return data
+  try {
+    // 먼저 사용자가 users 테이블에 존재하는지 확인
+    const { data: existingUser, error: checkError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('user_id', user.id)
+      .single()
+    
+    console.log("기존 사용자 정보:", existingUser)
+    
+    if (checkError && checkError.code !== 'PGRST116') {
+      // PGRST116는 데이터가 없는 경우의 에러 코드
+      console.error("사용자 정보 조회 실패:", checkError)
+      throw checkError
+    }
+    
+    let result
+    
+    if (!existingUser) {
+      // 사용자가 없는 경우 새로 생성
+      console.log("사용자 정보 새로 생성")
+      const { data, error } = await supabase
+        .from('users')
+        .insert({
+          user_id: user.id,
+          email: user.email,
+          ...userData
+        })
+        .select()
+      
+      if (error) {
+        console.error("사용자 정보 생성 실패:", error)
+        throw error
+      }
+      
+      result = data
+    } else {
+      // 사용자가 있는 경우 업데이트
+      console.log("기존 사용자 정보 업데이트")
+      const { data, error } = await supabase
+        .from('users')
+        .update({
+          ...userData,
+          // updated_at: new Date().toISOString() // 업데이트 시간도 함께 저장 (필요시)
+        })
+        .eq('user_id', user.id)
+        .select()
+      
+      if (error) {
+        console.error("사용자 정보 업데이트 실패:", error)
+        throw error
+      }
+      
+      result = data
+    }
+    
+    console.log("사용자 정보 업데이트 성공:", result)
+    return result
+  } catch (error) {
+    console.error("사용자 정보 업데이트 중 에러 발생:", error)
+    throw error
+  }
 }
 
 // 사용자 프로필 조회
