@@ -1,5 +1,4 @@
-1.users 생성->notifications setting 생성
-2.notification 생성 로직 붙이기
+
 5.전반적인 ui개선
 
  14.모바일 반응형 체크 처음부터 끝까지.

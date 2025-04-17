@@ -152,20 +152,6 @@ export async function createNotification(data: {
     .eq("user_id", data.user_id)
     .single()
   
-  // 기본값 사용 (설정이 없는 경우)
-  let allowNotification = true
-  
-  // 사용자의 알림 설정에 따라 알림 전송 여부 결정
-  if (!settingsError && settings) {
-    const settingKey = `${data.type}_notification` as keyof NotificationSetting
-    allowNotification = settings[settingKey] as boolean
-  }
-  
-  // 알림 설정에 따라 알림 생성 여부 결정
-  if (!allowNotification) {
-    return null
-  }
-  
   // 2. 알림 생성
   const { data: notification, error } = await supabase
     .from("notifications")
@@ -319,6 +305,41 @@ export async function createPrayerReactionNotification({
 }
 
 /**
+ * 기도 요청에 대한 '기도중' 반응 추가/제거 시 알림 생성 헬퍼 함수
+ */
+export async function createPrayerToggleNotification({
+  recipientId,
+  senderId,
+  requestId,
+  roomId,
+  senderName,
+  prayerTitle,
+  isPraying
+}: {
+  recipientId: string
+  senderId: string
+  requestId: string
+  roomId: string
+  senderName: string
+  prayerTitle: string
+  isPraying: boolean
+}) {
+  // 기도를 시작하는 경우에만 알림 생성
+  if (!isPraying) {
+    return createNotification({
+      user_id: recipientId,
+      type: "prayer",
+      title: "새로운 기도 동참",
+      content: `${senderName}님이 '${prayerTitle}' 기도제목에 함께 기도하기 시작했습니다.`,
+      sender_id: senderId,
+      request_id: requestId,
+      room_id: roomId
+    });
+  }
+  return null; // 기도를 취소하는 경우에는 알림을 생성하지 않음
+}
+
+/**
  * 기도 응답 알림 생성 헬퍼 함수
  */
 export async function createPrayerAnswerNotification({
@@ -341,6 +362,78 @@ export async function createPrayerAnswerNotification({
     type: "answer",
     title: "기도 응답이 등록되었습니다",
     content: `${senderName}님이 '${prayerTitle}' 기도제목에 응답을 기록했습니다.`,
+    sender_id: senderId,
+    request_id: requestId,
+    room_id: roomId
+  })
+}
+
+/**
+ * 기도 응답 상태 변경 알림 생성 헬퍼 함수
+ */
+export async function createPrayerAnsweredNotification({
+  recipientIds,
+  senderId,
+  requestId,
+  roomId,
+  senderName,
+  prayerTitle
+}: {
+  recipientIds: string[] // 이 기도제목에 반응한 모든 사용자 ID
+  senderId: string
+  requestId: string
+  roomId: string
+  senderName: string
+  prayerTitle: string
+}) {
+  const notifications = [];
+  
+  for (const recipientId of recipientIds) {
+    if (recipientId === senderId) continue; // 자신에게는 알림 보내지 않음
+    
+    const notification = await createNotification({
+      user_id: recipientId,
+      type: "answer",
+      title: "기도 응답 소식",
+      content: `${senderName}님이 '${prayerTitle}' 기도제목에 응답을 받았습니다.`,
+      sender_id: senderId,
+      request_id: requestId,
+      room_id: roomId
+    });
+    
+    notifications.push(notification);
+  }
+  
+  return notifications;
+}
+
+/**
+ * 기도 요청 상태 변경 알림 생성 헬퍼 함수
+ */
+export async function createPrayerStatusChangeNotification({
+  recipientId,
+  senderId,
+  requestId,
+  roomId,
+  senderName,
+  prayerTitle,
+  isAnswered
+}: {
+  recipientId: string
+  senderId: string
+  requestId: string
+  roomId: string
+  senderName: string
+  prayerTitle: string
+  isAnswered: boolean
+}) {
+  return createNotification({
+    user_id: recipientId,
+    type: "answer",
+    title: isAnswered ? "기도 응답 확인" : "기도 요청 상태 변경",
+    content: isAnswered 
+      ? `${senderName}님이 '${prayerTitle}' 기도제목을 응답 받음으로 표시했습니다.`
+      : `${senderName}님이 '${prayerTitle}' 기도제목의 응답 상태를 변경했습니다.`,
     sender_id: senderId,
     request_id: requestId,
     room_id: roomId
@@ -371,6 +464,90 @@ export async function createRoomInviteNotification({
     sender_id: senderId,
     room_id: roomId
   })
+}
+
+/**
+ * 기도방 역할 변경 알림 생성 헬퍼 함수
+ */
+export async function createRoleChangeNotification({
+  recipientId,
+  senderId,
+  roomId,
+  senderName,
+  roomTitle,
+  newRole
+}: {
+  recipientId: string
+  senderId: string
+  roomId: string
+  senderName: string
+  roomTitle: string
+  newRole: string
+}) {
+  return createNotification({
+    user_id: recipientId,
+    type: "system",
+    title: "기도방 역할 변경",
+    content: `${senderName}님이 '${roomTitle}' 기도방에서 회원님의 역할을 '${newRole === 'admin' ? '관리자' : '일반 회원'}'로 변경했습니다.`,
+    sender_id: senderId,
+    room_id: roomId
+  })
+}
+
+/**
+ * 기도방 퇴출 알림 생성 헬퍼 함수
+ */
+export async function createRoomRemovalNotification({
+  recipientId,
+  senderId,
+  roomTitle,
+  senderName
+}: {
+  recipientId: string
+  senderId: string
+  roomTitle: string
+  senderName: string
+}) {
+  return createNotification({
+    user_id: recipientId,
+    type: "system",
+    title: "기도방 퇴출 안내",
+    content: `${senderName}님이 회원님을 '${roomTitle}' 기도방에서 퇴출했습니다.`,
+    sender_id: senderId
+  })
+}
+
+/**
+ * 기도방 삭제 알림 생성 헬퍼 함수
+ */
+export async function createRoomDeleteNotification({
+  recipientIds,
+  senderId,
+  roomTitle,
+  senderName
+}: {
+  recipientIds: string[]
+  senderId: string
+  roomTitle: string
+  senderName: string
+}) {
+  const notifications = [];
+  
+  for (const recipientId of recipientIds) {
+    if (recipientId === senderId) continue; // 자신에게는 알림 보내지 않음
+    
+    const notification = await createNotification({
+      user_id: recipientId,
+      type: "system",
+      title: "기도방 삭제 안내",
+      content: `${senderName}님이 '${roomTitle}' 기도방을 삭제했습니다.`,
+      sender_id: senderId
+    });
+    
+    notifications.push(notification);
+  }
+  
+  return notifications;
 }
 
 /**

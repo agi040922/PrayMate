@@ -103,9 +103,7 @@ export async function updateUserProfile(userData: { name?: string, contact?: str
   const user = await getCurrentUser() // auth에서 사용자 ID만 가져오기
   
   if (!user) throw new AuthError('User not authenticated')
-  
-  console.log("업데이트할 사용자 ID:", user.id)
-  console.log("업데이트할 데이터:", userData)
+
   
   try {
     // 먼저 사용자가 users 테이블에 존재하는지 확인
@@ -115,11 +113,11 @@ export async function updateUserProfile(userData: { name?: string, contact?: str
       .eq('user_id', user.id)
       .single()
     
-    console.log("기존 사용자 정보:", existingUser)
+    
     
     if (checkError && checkError.code !== 'PGRST116') {
       // PGRST116는 데이터가 없는 경우의 에러 코드
-      console.error("사용자 정보 조회 실패:", checkError)
+    
       throw checkError
     }
     

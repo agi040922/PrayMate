@@ -5,7 +5,16 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Bell, MessageSquare, Heart, CheckCircle, ArrowLeft, Trash2 } from "lucide-react"
+import { 
+  Bell, 
+  MessageSquare, 
+  Heart, 
+  CheckCircle, 
+  ArrowLeft, 
+  Trash2,
+  User,
+  Filter
+} from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,6 +25,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useToast } from "@/components/ui/use-toast"
 import { useAuth } from "@/lib/context/AuthContext"
 import { 
@@ -30,9 +48,24 @@ interface NotificationListProps {
   onBackClick?: () => void
 }
 
+// 알림 타입 정의 (notifications 테이블의 type 값에 맞춤)
+type NotificationType = "comment" | "prayer" | "answer" | "invite" | "system" | "all";
+
+// 알림 타입 표시 정보
+const notificationTypeInfo = {
+  all: { label: "전체", icon: <Bell className="h-4 w-4" /> },
+  comment: { label: "댓글", icon: <MessageSquare className="h-4 w-4 text-blue-500" /> },
+  prayer: { label: "기도", icon: <Heart className="h-4 w-4 text-red-500" /> },
+  answer: { label: "응답", icon: <CheckCircle className="h-4 w-4 text-green-500" /> },
+  invite: { label: "초대", icon: <User className="h-4 w-4 text-purple-500" /> },
+  system: { label: "시스템", icon: <Bell className="h-4 w-4 text-gray-500" /> }
+};
+
 export function NotificationList({ onBackClick }: NotificationListProps) {
   const [activeTab, setActiveTab] = useState<"all" | "unread">("all")
+  const [activeType, setActiveType] = useState<NotificationType>("all")
   const [notifications, setNotifications] = useState<Notification[]>([])
+  const [filteredNotifications, setFilteredNotifications] = useState<Notification[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [deleteAlertId, setDeleteAlertId] = useState<string | null>(null)
   
@@ -65,6 +98,17 @@ export function NotificationList({ onBackClick }: NotificationListProps) {
     
     fetchNotifications()
   }, [user, activeTab, toast])
+
+  // 알림 타입 필터링 처리
+  useEffect(() => {
+    if (activeType === "all") {
+      setFilteredNotifications(notifications)
+    } else {
+      setFilteredNotifications(
+        notifications.filter(notification => notification.type === activeType)
+      )
+    }
+  }, [notifications, activeType])
 
   // 알림 읽음 처리
   const handleReadNotification = async (id: string) => {
@@ -153,10 +197,22 @@ export function NotificationList({ onBackClick }: NotificationListProps) {
       case "answer":
         return <CheckCircle className="h-5 w-5 text-green-500" />
       case "invite":
-        return <Bell className="h-5 w-5 text-purple-500" />
+        return <User className="h-5 w-5 text-purple-500" />
       default:
         return <Bell className="h-5 w-5 text-gray-500" />
     }
+  }
+
+  // 타입별 알림 개수 계산
+  const getCountByType = (type: NotificationType) => {
+    if (type === "all") return notifications.length;
+    return notifications.filter(notification => notification.type === type).length;
+  }
+
+  // 읽지 않은 알림 개수 계산
+  const getUnreadCountByType = (type: NotificationType) => {
+    if (type === "all") return notifications.filter(n => !n.is_read).length;
+    return notifications.filter(n => n.type === type && !n.is_read).length;
   }
 
   if (isLoading) {
@@ -175,6 +231,38 @@ export function NotificationList({ onBackClick }: NotificationListProps) {
             </Button>
           )}
           <h1 className="text-2xl font-bold">알림</h1>
+          
+          {/* 알림 타입 필터 드롭다운 */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="ml-2 flex items-center gap-1">
+                {notificationTypeInfo[activeType].icon}
+                <span>{notificationTypeInfo[activeType].label}</span>
+                <Filter className="ml-1 h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56">
+              <DropdownMenuLabel>알림 종류</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                {(Object.keys(notificationTypeInfo) as NotificationType[]).map((type) => (
+                  <DropdownMenuItem 
+                    key={type}
+                    onClick={() => setActiveType(type)}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      {notificationTypeInfo[type].icon}
+                      <span>{notificationTypeInfo[type].label}</span>
+                    </div>
+                    <Badge variant="outline" className="ml-auto text-xs">
+                      {getCountByType(type)}
+                    </Badge>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         {/* 모두 읽음 처리 버튼 */}
         <Button 
@@ -195,25 +283,47 @@ export function NotificationList({ onBackClick }: NotificationListProps) {
             {/* 읽지 않은 알림 탭 */}
             <TabsTrigger value="unread">
               읽지 않은 알림
-              {notifications.filter((n) => !n.is_read).length > 0 && (
+              {getUnreadCountByType("all") > 0 && (
                 <Badge variant="secondary" className="ml-2">
-                  {notifications.filter((n) => !n.is_read).length}
+                  {getUnreadCountByType("all")}
                 </Badge>
               )}
             </TabsTrigger>
           </TabsList>
         </div>
 
+        {/* 현재 선택된 타입 표시 */}
+        {activeType !== "all" && (
+          <div className="mt-2 flex items-center">
+            <Badge className="px-2 py-1 flex items-center gap-1 bg-primary/10 text-primary border-none">
+              {notificationTypeInfo[activeType].icon}
+              <span>{notificationTypeInfo[activeType].label} 알림만 표시 중</span>
+            </Badge>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setActiveType("all")}
+              className="ml-2 h-7 text-xs"
+            >
+              전체 보기
+            </Button>
+          </div>
+        )}
+
         {/* 알림 목록 */}
         <TabsContent value="all" className="mt-6">
-          {notifications.length === 0 ? (
+          {filteredNotifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <Bell className="mb-4 h-12 w-12 text-muted-foreground" />
-              <p className="text-muted-foreground">알림이 없습니다.</p>
+              <p className="text-muted-foreground">
+                {activeType === "all" 
+                  ? "알림이 없습니다." 
+                  : `${notificationTypeInfo[activeType].label} 알림이 없습니다.`}
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
-              {notifications.map((notification) => (
+              {filteredNotifications.map((notification) => (
                 <Card
                   key={notification.notification_id}
                   className={`overflow-hidden transition-colors ${
@@ -269,14 +379,20 @@ export function NotificationList({ onBackClick }: NotificationListProps) {
         </TabsContent>
 
         <TabsContent value="unread" className="mt-6">
-          {notifications.length === 0 ? (
+          {filteredNotifications.filter(n => !n.is_read).length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <CheckCircle className="mb-4 h-12 w-12 text-muted-foreground" />
-              <p className="text-muted-foreground">읽지 않은 알림이 없습니다.</p>
+              <p className="text-muted-foreground">
+                {activeType === "all"
+                  ? "읽지 않은 알림이 없습니다."
+                  : `읽지 않은 ${notificationTypeInfo[activeType].label} 알림이 없습니다.`}
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
-              {notifications.map((notification) => (
+              {filteredNotifications
+                .filter(notification => !notification.is_read)
+                .map((notification) => (
                 <Card
                   key={notification.notification_id}
                   className="overflow-hidden border-l-4 border-l-primary"

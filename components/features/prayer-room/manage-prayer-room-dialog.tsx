@@ -107,7 +107,18 @@ export function ManagePrayerRoomDialog({
         
         // 참여자 목록 불러오기
         const participantsData = await getRoomParticipants(roomId)
-        setParticipants(participantsData)
+        // 타입 변환을 통해 참여자 데이터 구조 맞추기
+        const formattedParticipants = participantsData.map((participant: any) => ({
+          participant_id: participant.participant_id,
+          role: participant.role,
+          joined_at: participant.joined_at,
+          user: {
+            user_id: participant.user.user_id || "",
+            name: participant.user.name || "알 수 없음",
+            email: participant.user.email || ""
+          }
+        }))
+        setParticipants(formattedParticipants)
       } catch (error) {
         console.error("기도방 정보 로딩 실패:", error)
         toast({
@@ -314,12 +325,16 @@ export function ManagePrayerRoomDialog({
   if (loading) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="w-[95vw] sm:max-w-[600px] max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>기도방 정보</DialogTitle>
           </DialogHeader>
-          <div className="flex items-center justify-center py-12">
-            <p>로딩 중...</p>
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-pulse flex flex-col items-center">
+              <div className="h-8 w-3/4 bg-muted rounded mb-4"></div>
+              <div className="h-4 w-1/2 bg-muted rounded mb-2"></div>
+              <div className="h-4 w-2/3 bg-muted rounded"></div>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -328,7 +343,7 @@ export function ManagePrayerRoomDialog({
 
   return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>{isAdmin ? "기도방 관리" : "기도방 정보"}</DialogTitle>
             <DialogDescription>
@@ -345,7 +360,7 @@ export function ManagePrayerRoomDialog({
             </TabsList>
 
           {/* 기본 설정 탭 */}
-          <TabsContent value="settings" className="space-y-4 py-4">
+          <TabsContent value="settings" className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
             <div className="grid gap-4">
               {isAdmin ? (
                 <>
@@ -356,6 +371,7 @@ export function ManagePrayerRoomDialog({
                       value={roomTitle} 
                       onChange={(e) => setRoomTitle(e.target.value)} 
                       placeholder="기도방 이름"
+                      className="min-h-[44px]"
                     />
                   </div>
                   <div className="grid gap-2">
@@ -368,7 +384,7 @@ export function ManagePrayerRoomDialog({
                       className="min-h-[100px]"
                     />
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="space-y-0.5">
                       <Label htmlFor="public-room">공개 기도방</Label>
                       <p className="text-xs text-muted-foreground">
@@ -386,15 +402,15 @@ export function ManagePrayerRoomDialog({
                 <>
                   <div className="grid gap-2">
                     <Label>기도방 이름</Label>
-                    <div className="text-sm">{roomTitle}</div>
+                    <div className="text-sm p-2 bg-muted/20 rounded-md">{roomTitle}</div>
                   </div>
                   <div className="grid gap-2">
                     <Label>기도방 설명</Label>
-                    <div className="text-sm">{roomDescription || "설명이 없습니다."}</div>
+                    <div className="text-sm p-2 bg-muted/20 rounded-md min-h-[80px]">{roomDescription || "설명이 없습니다."}</div>
                   </div>
                   <div className="grid gap-2">
                     <Label>공개 상태</Label>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 p-2 bg-muted/20 rounded-md">
                       {isPublic ? (
                         <>
                           <Globe className="h-4 w-4 text-muted-foreground" />
@@ -415,8 +431,8 @@ export function ManagePrayerRoomDialog({
               <div className="space-y-2 pt-4 border-t">
                 <Label>방 ID (초대용)</Label>
                 <div className="flex items-center space-x-2">
-                  <Input value={roomId} readOnly />
-                  <Button variant="outline" size="icon" onClick={handleCopyRoomId}>
+                  <Input value={roomId} readOnly className="min-h-[44px]" />
+                  <Button variant="outline" size="icon" onClick={handleCopyRoomId} className="min-h-[44px] min-w-[44px]">
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
@@ -426,47 +442,28 @@ export function ManagePrayerRoomDialog({
               </div>
             </div>
             {isAdmin ? (
-              <DialogFooter className="flex flex-col gap-2 w-full">
-                <div className="flex justify-between w-full">
-                  <Button variant="destructive" onClick={handleDeleteRoom} disabled={saving || isLeaving}>
+              <DialogFooter className="flex flex-col gap-2 w-full mt-4 pt-4 border-t">
+                <div className="flex flex-col sm:flex-row justify-between w-full gap-2">
+                  <Button variant="destructive" onClick={handleDeleteRoom} disabled={saving || isLeaving} className="min-h-[44px]">
                     기도방 삭제
                   </Button>
-                  <Button onClick={handleSaveSettings} disabled={saving || isLeaving}>
+                  <Button onClick={handleSaveSettings} disabled={saving || isLeaving} className="min-h-[44px]">
                     {saving ? "저장 중..." : "설정 저장"}
                   </Button>
                 </div>
-                {/* <Button 
-                  variant="outline" 
-                  className="w-full text-destructive border-destructive hover:bg-destructive/10" 
-                  onClick={handleLeaveRoom} 
-                  disabled={isLeaving}
-                >
-                  {isLeaving ? "처리 중..." : "기도방 나가기"}
-                </Button> */}
               </DialogFooter>
-            ) : (
-              <DialogFooter>
-                {/* <Button 
-                  variant="outline" 
-                  className="w-full text-destructive border-destructive hover:bg-destructive/10" 
-                  onClick={handleLeaveRoom} 
-                  disabled={isLeaving}
-                >
-                  {isLeaving ? "처리 중..." : "기도방 나가기"}
-                </Button> */}
-              </DialogFooter>
-            )}
+            ) : null}
             </TabsContent>
             
             {/* 멤버 관리 탭 */}
-            <TabsContent value="members" className="py-4">
+            <TabsContent value="members" className="py-4 max-h-[60vh] overflow-y-auto">
               <div className="space-y-4">
               <div className="text-sm font-medium">총 {participants.length}명의 멤버</div>
               
               {participants.map((participant) => (
                 <Card key={participant.participant_id} className="overflow-hidden">
                   <CardHeader className="p-4 pb-0">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div className="flex items-center space-x-4">
                         <Avatar>
                           <AvatarImage src="/placeholder-user.jpg" />
@@ -478,28 +475,28 @@ export function ManagePrayerRoomDialog({
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant={participant.role === "admin" ? "default" : "outline"}>
+                        <Badge variant={participant.role === "admin" ? "default" : "outline"} className="min-h-[24px]">
                           {participant.role === "admin" ? "관리자" : "멤버"}
                         </Badge>
                         {isAdmin && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Button variant="ghost" size="icon" className="h-9 w-9">
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               {participant.role === "admin" ? (
-                                <DropdownMenuItem onClick={() => handleChangeRole(participant.participant_id, "member")}>
+                                <DropdownMenuItem onClick={() => handleChangeRole(participant.participant_id, "member")} className="min-h-[36px]">
                                   멤버로 변경
                                 </DropdownMenuItem>
                               ) : (
-                                <DropdownMenuItem onClick={() => handleChangeRole(participant.participant_id, "admin")}>
+                                <DropdownMenuItem onClick={() => handleChangeRole(participant.participant_id, "admin")} className="min-h-[36px]">
                                   관리자로 변경
                                 </DropdownMenuItem>
                               )}
                               <DropdownMenuItem 
-                                className="text-destructive"
+                                className="text-destructive min-h-[36px]"
                                 onClick={() => handleRemoveParticipant(participant.participant_id)}
                               >
                                 기도방에서 제거
@@ -527,10 +524,10 @@ export function ManagePrayerRoomDialog({
                 </div>
               )}
               </div>
-              <div className="mt-6">
+              <div className="mt-6 pt-4 border-t">
                 <Button 
                   variant="outline" 
-                  className="w-full text-destructive border-destructive hover:bg-destructive/10" 
+                  className="w-full text-destructive border-destructive hover:bg-destructive/10 min-h-[44px]" 
                   onClick={handleLeaveRoom}
                   disabled={isLeaving}
                 >

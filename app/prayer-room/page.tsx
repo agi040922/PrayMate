@@ -25,6 +25,7 @@ import { useAuth } from "@/lib/context/AuthContext"
 import { signOut } from "@/lib/supabase/users"
 import { useToast } from "@/components/ui/use-toast"
 import { getPrayerRoomDetails } from "@/lib/supabase/prayer-rooms"
+import { getUnreadNotificationCount } from "@/lib/supabase/notifications"
 
 export default function PrayerRoomPage() {
   const [showForm, setShowForm] = useState(false)
@@ -33,6 +34,7 @@ export default function PrayerRoomPage() {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null)
   const [selectedRoom, setSelectedRoom] = useState<any>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState<number>(0)
   
   const router = useRouter()
   const { user, loading } = useAuth()
@@ -71,6 +73,29 @@ export default function PrayerRoomPage() {
     
     fetchRoomDetails()
   }, [selectedRoomId, toast])
+  
+  // 읽지 않은 알림 개수 가져오기
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      if (!user) return
+      
+      try {
+        const count = await getUnreadNotificationCount(user.id)
+        setUnreadNotificationCount(count)
+      } catch (error) {
+        console.error("알림 개수 조회 실패:", error)
+      }
+    }
+    
+    // 초기 로드 시 알림 개수 조회
+    fetchUnreadCount()
+    
+    // 30초마다 알림 개수 갱신
+    const intervalId = setInterval(fetchUnreadCount, 30000)
+    
+    // 컴포넌트 언마운트 시 인터벌 정리
+    return () => clearInterval(intervalId)
+  }, [user])
   
   // 로그아웃 처리
   const handleSignOut = async () => {
@@ -144,39 +169,22 @@ export default function PrayerRoomPage() {
             <Link href="/notifications">
               <Bell className="h-5 w-5" />
               {/* 읽지 않은 알림이 있는 경우 표시 */}
-              <Badge className="absolute -right-1 -top-1 h-4 w-4 rounded-full p-0 text-[10px]">3</Badge>
+              {unreadNotificationCount > 0 && (
+                <Badge className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]">
+                  {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+                </Badge>
+              )}
               <span className="sr-only">알림</span>
             </Link>
           </Button>
 
           {/* 프로필 버튼 */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <User className="h-5 w-5" />
-                <span className="sr-only">프로필</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <Link href="/profile" passHref legacyBehavior>
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>내 프로필</span>
-                </DropdownMenuItem>
-              </Link>
-              <Link href="/settings" passHref legacyBehavior>
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>설정</span>
-                </DropdownMenuItem>
-              </Link>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut}>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>로그아웃</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/profile">
+              <User className="h-5 w-5" />
+              <span className="sr-only">프로필</span>
+            </Link>
+          </Button>
         </div>
       </header>
 
@@ -215,9 +223,9 @@ export default function PrayerRoomPage() {
                             <SelectItem value="intercession">중보기도</SelectItem>
                           </SelectContent>
                         </Select>
-                        <div className="relative sm:hidden">
+                        {/* <div className="relative sm:hidden">
                           <Input type="search" placeholder="검색" className="w-full" />
-                        </div>
+                        </div> */}
                       </div>
 
                       <div className="flex items-center gap-2">

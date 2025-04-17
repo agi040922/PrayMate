@@ -16,31 +16,54 @@ import { useToast } from "@/components/ui/use-toast"
 import { useAuth } from "@/lib/context/AuthContext"
 import { getComments, addComment, deleteComment } from "@/lib/supabase/prayer-requests"
 import { Trash2 } from "lucide-react"
+import { createCommentNotification } from "@/lib/supabase/notifications"
+import { supabase } from "@/lib/supabaseClient"
 
 interface CommentSectionProps {
   requestId: string
   open: boolean
   onOpenChange: (open: boolean) => void
+  roomId?: string
 }
 
-export function CommentSection({ requestId, open, onOpenChange }: CommentSectionProps) {
+export function CommentSection({ requestId, open, onOpenChange, roomId }: CommentSectionProps) {
   const [comments, setComments] = useState<any[]>([])
   const [newComment, setNewComment] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [prayerRequest, setPrayerRequest] = useState<any>(null)
   
   const { toast } = useToast()
   const { user } = useAuth()
   
-  // 댓글 목록 불러오기
+  // 댓글 목록과 기도제목 정보 불러오기
   useEffect(() => {
-    const fetchComments = async () => {
+    const fetchData = async () => {
       if (!requestId) return
       
       try {
         setIsLoading(true)
+        
+        // 댓글 데이터 로드
         const data = await getComments(requestId)
         setComments(data || [])
+        
+        // roomId가 없으면 기도제목 정보를 로드하여 roomId 가져오기
+        if (!prayerRequest) {
+          try {
+            const { data: prayerData } = await supabase
+              .from("prayer_requests")
+              .select("room_id, user_id, title")
+              .eq("request_id", requestId)
+              .single();
+              
+            if (prayerData) {
+              setPrayerRequest(prayerData);
+            }
+          } catch (error) {
+            console.error("기도제목 정보 로딩 실패:", error);
+          }
+        }
       } catch (error) {
         console.error("댓글 로딩 실패:", error)
         toast({
@@ -54,9 +77,9 @@ export function CommentSection({ requestId, open, onOpenChange }: CommentSection
     }
     
     if (open) {
-      fetchComments()
+      fetchData()
     }
-  }, [requestId, open, toast])
+  }, [requestId, open, toast, prayerRequest])
   
   // 새 댓글 등록
   const handleSubmitComment = async (e: React.FormEvent) => {
@@ -99,6 +122,27 @@ export function CommentSection({ requestId, open, onOpenChange }: CommentSection
       // 댓글 목록 업데이트
       setComments([...comments, comment])
       setNewComment("")
+      
+      // 기도제목 작성자에게 알림 전송
+      try {
+        // roomId 값 결정 (prop으로 전달된 값 또는 기도제목에서 가져온 값)
+        const prayerRoomId = roomId || prayerRequest?.room_id;
+        const prayerUserId = prayerRequest?.user_id;
+        
+        if (prayerRoomId && prayerUserId && prayerUserId !== user.id) {
+          await createCommentNotification({
+            recipientId: prayerUserId,
+            senderId: user.id,
+            requestId: requestId,
+            roomId: prayerRoomId,
+            senderName: user.user_metadata?.name || user.email?.split('@')[0] || '익명',
+            comment: newComment
+          });
+        }
+      } catch (notificationError) {
+        console.error("알림 생성 실패:", notificationError);
+        // 알림 실패는 댓글 작성에 영향을 주지 않으므로 에러 표시 안함
+      }
       
       toast({
         title: "댓글 등록 완료",

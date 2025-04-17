@@ -32,9 +32,17 @@ interface YearlyPrayerListProps {
   type: "weekly" | "monthly" | "yearly"
   prayers?: PersonalPrayerNote[]
   onUpdate?: () => void
+  externalOpenTrigger?: boolean
+  onExternalOpenChange?: (open: boolean) => void
 }
 
-export function YearlyPrayerList({ type, prayers: externalPrayers, onUpdate }: YearlyPrayerListProps) {
+export function YearlyPrayerList({
+  type,
+  prayers: externalPrayers,
+  onUpdate,
+  externalOpenTrigger = false,
+  onExternalOpenChange
+}: YearlyPrayerListProps) {
   const [prayers, setPrayers] = useState<PersonalPrayerNote[]>([])
   const [editingPrayer, setEditingPrayer] = useState<PersonalPrayerNote | null>(null)
   const [newContent, setNewContent] = useState("")
@@ -45,6 +53,10 @@ export function YearlyPrayerList({ type, prayers: externalPrayers, onUpdate }: Y
   const [newPrayerIsPublic, setNewPrayerIsPublic] = useState(true)
   const [isLoading, setIsLoading] = useState(!externalPrayers)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showDeleteAlert, setShowDeleteAlert] = useState<string | null>(null)
+  const [showCompleteAlert, setShowCompleteAlert] = useState<string | null>(null)
+  const [editPrayerContent, setEditPrayerContent] = useState("")
+  const [editPrayerIsPublic, setEditPrayerIsPublic] = useState(true)
 
   const { toast } = useToast()
   const { user } = useAuth()
@@ -95,6 +107,15 @@ export function YearlyPrayerList({ type, prayers: externalPrayers, onUpdate }: Y
 
     fetchPrayers()
   }, [user, type, toast, externalPrayers])
+
+  // 외부 트리거를 통한 다이얼로그 열기
+  useEffect(() => {
+    if (externalOpenTrigger) {
+      setShowCreateDialog(true);
+      // 상태 초기화
+      onExternalOpenChange && onExternalOpenChange(false);
+    }
+  }, [externalOpenTrigger, onExternalOpenChange]);
 
   // 기도제목 완료 상태 토글 함수
   const toggleComplete = async (id: string) => {
@@ -252,7 +273,13 @@ export function YearlyPrayerList({ type, prayers: externalPrayers, onUpdate }: Y
   }
 
   if (isLoading) {
-    return <div className="flex justify-center py-8">기도제목을 불러오는 중...</div>
+    return <div className="flex justify-center py-8">
+      <div className="animate-pulse flex flex-col items-center">
+        <div className="h-6 w-3/4 bg-muted rounded mb-4"></div>
+        <div className="h-4 w-1/2 bg-muted rounded mb-2"></div>
+        <div className="h-4 w-2/3 bg-muted rounded"></div>
+      </div>
+    </div>
   }
 
   return (
@@ -263,7 +290,7 @@ export function YearlyPrayerList({ type, prayers: externalPrayers, onUpdate }: Y
           variant="outline" 
           size="sm" 
           onClick={() => setShowCreateDialog(true)}
-          className="gap-1"
+          className="gap-1 min-h-[36px]"
         >
           <PlusCircle className="h-4 w-4" /> 추가
         </Button>
@@ -278,6 +305,7 @@ export function YearlyPrayerList({ type, prayers: externalPrayers, onUpdate }: Y
             variant="link" 
             size="sm" 
             onClick={() => setShowCreateDialog(true)}
+            className="min-h-[36px]"
           >
             새 기도제목 추가하기
           </Button>
@@ -287,7 +315,7 @@ export function YearlyPrayerList({ type, prayers: externalPrayers, onUpdate }: Y
           {prayers.map((prayer) => (
             <div
               key={prayer.note_id}
-              className={`flex items-start justify-between rounded-md border p-2 ${
+              className={`flex items-start justify-between rounded-md border p-3 ${
                 prayer.is_completed ? "bg-muted/50" : ""
               }`}
             >
@@ -296,11 +324,11 @@ export function YearlyPrayerList({ type, prayers: externalPrayers, onUpdate }: Y
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 rounded-full"
+                  className="h-7 w-7 rounded-full"
                   onClick={() => toggleComplete(prayer.note_id)}
                 >
                   <div
-                    className={`h-4 w-4 rounded-full border ${
+                    className={`h-5 w-5 rounded-full border ${
                       prayer.is_completed ? "bg-primary border-primary" : "border-muted-foreground"
                     }`}
                   >
@@ -323,11 +351,11 @@ export function YearlyPrayerList({ type, prayers: externalPrayers, onUpdate }: Y
               </div>
               <div className="flex items-center gap-1">
                 {/* 편집 버튼 */}
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => startEditing(prayer)}>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditing(prayer)}>
                   <Pencil className="h-3 w-3" />
                 </Button>
                 {/* 삭제 버튼 */}
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deletePrayer(prayer.note_id)}>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deletePrayer(prayer.note_id)}>
                   <Trash2 className="h-3 w-3" />
                 </Button>
               </div>
@@ -338,7 +366,7 @@ export function YearlyPrayerList({ type, prayers: externalPrayers, onUpdate }: Y
 
       {/* 기도제목 편집 다이얼로그 */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {getTypeTitle()} 기도제목 편집
@@ -353,7 +381,7 @@ export function YearlyPrayerList({ type, prayers: externalPrayers, onUpdate }: Y
             value={newContent}
             onChange={(e) => setNewContent(e.target.value)}
             placeholder="기도제목을 입력하세요"
-            className="min-h-[100px]"
+            className="min-h-[120px]"
           />
           <div className="flex items-center gap-2 pt-2">
             <Switch 
@@ -369,17 +397,19 @@ export function YearlyPrayerList({ type, prayers: externalPrayers, onUpdate }: Y
               )}
             </Label>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4 pt-2 border-t">
             <Button 
               variant="outline" 
               onClick={() => setShowEditDialog(false)}
               disabled={isSubmitting}
+              className="w-full sm:w-auto min-h-[44px]"
             >
               취소
             </Button>
             <Button 
               onClick={saveEdit}
               disabled={isSubmitting || !newContent.trim()}
+              className="w-full sm:w-auto min-h-[44px]"
             >
               {isSubmitting ? "저장 중..." : "저장"}
             </Button>
@@ -388,8 +418,16 @@ export function YearlyPrayerList({ type, prayers: externalPrayers, onUpdate }: Y
       </Dialog>
 
       {/* 새 기도제목 추가 다이얼로그 */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="sm:max-w-[425px]">
+      <Dialog 
+        open={showCreateDialog} 
+        onOpenChange={(open) => {
+          setShowCreateDialog(open);
+          if (!open && onExternalOpenChange) {
+            onExternalOpenChange(false);
+          }
+        }}
+      >
+        <DialogContent className="w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               새 {getTypeTitle()} 기도제목 추가
@@ -408,7 +446,7 @@ export function YearlyPrayerList({ type, prayers: externalPrayers, onUpdate }: Y
               value={newPrayerContent}
               onChange={(e) => setNewPrayerContent(e.target.value)}
               placeholder="기도제목을 입력하세요"
-              className="min-h-[100px]"
+              className="min-h-[120px]"
             />
             <div className="flex items-center gap-2">
               <Switch 
@@ -428,17 +466,19 @@ export function YearlyPrayerList({ type, prayers: externalPrayers, onUpdate }: Y
               현재 기간: {formatPeriodLabel(getCurrentPeriodLabel(type))}
             </p>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4 pt-2 border-t">
             <Button 
               variant="outline" 
               onClick={() => setShowCreateDialog(false)}
               disabled={isSubmitting}
+              className="w-full sm:w-auto min-h-[44px]"
             >
               취소
             </Button>
             <Button 
               onClick={createNewPrayer}
               disabled={isSubmitting || !newPrayerContent.trim()}
+              className="w-full sm:w-auto min-h-[44px]"
             >
               {isSubmitting ? "추가 중..." : "추가"}
             </Button>

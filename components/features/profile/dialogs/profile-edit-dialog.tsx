@@ -28,7 +28,7 @@ export function ProfileEditDialog({ open, onOpenChange }: ProfileEditDialogProps
       const loadProfile = async () => {
         try {
           const profile = await getUserProfile()
-          console.log("로드된 프로필 정보:", profile)
+          
           if (profile) {
             setName(profile.name || "")
             setContact(profile.contact || "")
@@ -58,15 +58,10 @@ export function ProfileEditDialog({ open, onOpenChange }: ProfileEditDialogProps
     setError(null)
     
     try {
-      console.log("프로필 업데이트 시도:", { name, contact })
-      
       const result = await updateUserProfile({
         name,
         contact
       })
-      
-      console.log("프로필 업데이트 결과:", result)
-      
       toast({
         title: "프로필 업데이트 완료",
         description: "프로필 정보가 성공적으로 업데이트되었습니다."

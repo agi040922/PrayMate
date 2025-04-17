@@ -45,6 +45,11 @@ export function ProfileContent() {
   const { toast } = useToast()
   const router = useRouter()
   
+  // 기도제목 추가 다이얼로그 상태
+  const [openWeeklyPrayerForm, setOpenWeeklyPrayerForm] = useState(false)
+  const [openMonthlyPrayerForm, setOpenMonthlyPrayerForm] = useState(false)
+  const [openYearlyPrayerForm, setOpenYearlyPrayerForm] = useState(false)
+  
   const { 
     userPrayerRequests,
     answeredPrayerRequests,
@@ -304,14 +309,18 @@ export function ProfileContent() {
                 <CardDescription>이번 주 집중할 기도제목</CardDescription>
               </CardHeader>
               <CardContent>
-                <YearlyPrayerList type="weekly" prayers={weeklyPrayers} onUpdate={refreshPeriodPrayers} />
+                <YearlyPrayerList 
+                  type="weekly" 
+                  prayers={weeklyPrayers} 
+                  onUpdate={refreshPeriodPrayers}
+                  externalOpenTrigger={openWeeklyPrayerForm}
+                  onExternalOpenChange={setOpenWeeklyPrayerForm}
+                />
                 {/* 주간 기도제목 추가 버튼 */}
                 <Button 
                   variant="outline" 
                   className="mt-4 w-full"
-                  onClick={() => {
-                    // 기도제목 작성 다이얼로그 표시 로직 필요
-                  }}
+                  onClick={() => setOpenWeeklyPrayerForm(true)}
                 >
                   <Pencil className="mr-2 h-4 w-4" />
                   주간 기도제목 작성
@@ -329,14 +338,18 @@ export function ProfileContent() {
                 <CardDescription>이번 달 집중할 기도제목</CardDescription>
               </CardHeader>
               <CardContent>
-                <YearlyPrayerList type="monthly" prayers={monthlyPrayers} onUpdate={refreshPeriodPrayers} />
+                <YearlyPrayerList 
+                  type="monthly" 
+                  prayers={monthlyPrayers} 
+                  onUpdate={refreshPeriodPrayers}
+                  externalOpenTrigger={openMonthlyPrayerForm}
+                  onExternalOpenChange={setOpenMonthlyPrayerForm}
+                />
                 {/* 월간 기도제목 추가 버튼 */}
                 <Button 
                   variant="outline" 
                   className="mt-4 w-full"
-                  onClick={() => {
-                    // 기도제목 작성 다이얼로그 표시 로직 필요
-                  }}
+                  onClick={() => setOpenMonthlyPrayerForm(true)}
                 >
                   <Pencil className="mr-2 h-4 w-4" />
                   월간 기도제목 작성
@@ -354,14 +367,18 @@ export function ProfileContent() {
                 <CardDescription>올해 집중할 기도제목</CardDescription>
               </CardHeader>
               <CardContent>
-                <YearlyPrayerList type="yearly" prayers={yearlyPrayers} onUpdate={refreshPeriodPrayers} />
+                <YearlyPrayerList 
+                  type="yearly" 
+                  prayers={yearlyPrayers} 
+                  onUpdate={refreshPeriodPrayers}
+                  externalOpenTrigger={openYearlyPrayerForm}
+                  onExternalOpenChange={setOpenYearlyPrayerForm}
+                />
                 {/* 연간 기도제목 추가 버튼 */}
                 <Button 
                   variant="outline" 
                   className="mt-4 w-full"
-                  onClick={() => {
-                    // 기도제목 작성 다이얼로그 표시 로직 필요
-                  }}
+                  onClick={() => setOpenYearlyPrayerForm(true)}
                 >
                   <Pencil className="mr-2 h-4 w-4" />
                   연간 기도제목 작성

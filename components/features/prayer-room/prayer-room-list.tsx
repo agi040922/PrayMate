@@ -69,7 +69,7 @@ export function PrayerRoomList({ onManageRoom, onViewMembers }: PrayerRoomListPr
       <div className="text-center py-10">
         <p className="text-muted-foreground mb-4">참여 중인 기도방이 없습니다.</p>
         <Button asChild>
-          <Link href="/create-prayer-room">새 기도방 만들기</Link>
+          <Link href="/prayer-room">기도방 찾아보기</Link>
         </Button>
       </div>
     )

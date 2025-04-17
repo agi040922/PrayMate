@@ -173,7 +173,7 @@ export function PrayerEditDialog({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>기도제목 수정</DialogTitle>
           <DialogDescription>
@@ -181,7 +181,7 @@ export function PrayerEditDialog({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid gap-4 py-4">
+        <div className="grid gap-4 py-2 overflow-y-auto">
           {/* 카테고리 선택 */}
           <div className="grid gap-2">
             <Label htmlFor="category">카테고리</Label>
@@ -189,7 +189,7 @@ export function PrayerEditDialog({
               value={(categoryId !== undefined) ? categoryId.toString() : "none"} 
               onValueChange={(value) => setCategoryId(value === "none" ? undefined : parseInt(value))}
             >
-              <SelectTrigger>
+              <SelectTrigger className="min-h-[44px]">
                 <SelectValue placeholder="카테고리 선택" />
               </SelectTrigger>
               <SelectContent>
@@ -211,6 +211,7 @@ export function PrayerEditDialog({
               value={title} 
               onChange={(e) => setTitle(e.target.value)} 
               placeholder="기도제목 제목을 입력하세요"
+              className="min-h-[44px]"
             />
           </div>
           
@@ -222,36 +223,39 @@ export function PrayerEditDialog({
               value={content} 
               onChange={(e) => setContent(e.target.value)} 
               placeholder="기도제목 내용을 입력하세요"
-              className="h-24"
+              className="h-24 min-h-[100px]"
             />
           </div>
           
           {/* 성경구절 입력 */}
           <div className="grid gap-2">
             <Label htmlFor="bible">성경구절</Label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <Input 
                 id="bible-reference" 
                 value={bibleReference} 
                 onChange={(e) => setBibleReference(e.target.value)} 
                 placeholder="예: 요한복음 3:16"
+                className="min-h-[44px]"
               />
               <Input 
                 id="bible-text" 
                 value={bibleText} 
                 onChange={(e) => setBibleText(e.target.value)} 
                 placeholder="구절 내용"
+                className="min-h-[44px]"
               />
             </div>
             <p className="text-xs text-muted-foreground">성경구절 참조와 내용을 함께 입력하세요.</p>
           </div>
           
           {/* 응답 여부 */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 py-1">
             <Checkbox 
               id="answered" 
               checked={isAnswered} 
               onCheckedChange={(checked) => setIsAnswered(checked === true)}
+              className="h-5 w-5"
             />
             <Label htmlFor="answered" className="cursor-pointer">기도 응답 표시</Label>
           </div>
@@ -265,27 +269,29 @@ export function PrayerEditDialog({
                 value={answerContent} 
                 onChange={(e) => setAnswerContent(e.target.value)} 
                 placeholder="하나님의 응답을 기록하세요"
-                className="h-24"
+                className="h-24 min-h-[100px]"
               />
             </div>
           )}
           
           {/* 익명 여부 */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 py-1">
             <Checkbox 
               id="anonymous" 
               checked={isAnonymous} 
               onCheckedChange={(checked) => setIsAnonymous(checked === true)}
+              className="h-5 w-5"
             />
             <Label htmlFor="anonymous" className="cursor-pointer">익명으로 게시</Label>
           </div>
         </div>
         
-        <DialogFooter>
+        <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4 pt-2 border-t">
           <Button 
             type="submit" 
             onClick={handleSave} 
             disabled={isSubmitting}
+            className="w-full sm:w-auto min-h-[44px]"
           >
             {isSubmitting ? "저장 중..." : "저장"}
           </Button>

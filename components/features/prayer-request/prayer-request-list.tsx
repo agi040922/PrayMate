@@ -45,6 +45,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { createPrayerReactionNotification } from "@/lib/supabase/notifications"
 
 interface PrayerRequestListProps {
   roomId?: string
@@ -277,6 +278,10 @@ export function PrayerRequestList({
     }
     
     try {
+      // 현재 기도제목 정보 가져오기 (알림용)
+      const targetPrayer = prayerRequests.find(req => req.request_id === requestId);
+      const isPraying = userReactions[requestId]?.praying;
+      
       await addReaction({
         request_id: requestId,
         user_id: user.id,
@@ -303,6 +308,24 @@ export function PrayerRequestList({
           return request
         })
       )
+      
+      // 기도제목 작성자에게 알림 생성 (작성자와 기도한 사람이 다른 경우에만, 그리고 기도를 취소하는 경우가 아닐 때만)
+      if (targetPrayer && 
+          targetPrayer.user_id !== user.id && 
+          !isPraying) { // 기도를 추가할 때만 알림 생성
+        try {
+          await createPrayerReactionNotification({
+            recipientId: targetPrayer.user_id,
+            senderId: user.id,
+            requestId: requestId,
+            roomId: targetPrayer.room_id,
+            senderName: user.user_metadata?.name || user.email?.split('@')[0] || '익명'
+          });
+        } catch (notificationError) {
+          console.error("기도 알림 생성 실패:", notificationError);
+          // 알림 실패는 기도 기능에 영향을 주지 않으므로 에러 표시 안함
+        }
+      }
     } catch (error) {
       console.error("기도 반응 추가 실패:", error)
       toast({
@@ -644,6 +667,7 @@ export function PrayerRequestList({
         {showComments && (
           <CommentSection 
             requestId={showComments} 
+            roomId={roomId}
             open={!!showComments} 
             onOpenChange={() => setShowComments(null)}
           />
@@ -979,6 +1003,7 @@ export function PrayerRequestList({
       {showComments && (
         <CommentSection 
           requestId={showComments} 
+          roomId={roomId}
           open={!!showComments} 
           onOpenChange={() => setShowComments(null)}
         />
