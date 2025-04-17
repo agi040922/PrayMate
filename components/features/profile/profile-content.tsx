@@ -30,7 +30,6 @@ import { useAuth } from "@/lib/context/AuthContext"
 import { signOut, getUserProfile } from "@/lib/supabase/users"
 import { useToast } from "@/components/ui/use-toast"
 import { PrayerRequestCard } from "./cards/prayer-request-card"
-import { AnsweredPrayerCard } from "./cards/answered-prayer-card"
 import { ProfileEditDialog } from "./dialogs/profile-edit-dialog"
 
 export function ProfileContent() {
@@ -134,7 +133,13 @@ export function ProfileContent() {
     } else if (prayerFilter === "unanswered") {
       return userPrayerRequests;
     } else {
-      return [...userPrayerRequests, ...answeredPrayerRequests];
+      return [...userPrayerRequests, ...answeredPrayerRequests].sort(
+        (a, b) => {
+          const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+          return dateB - dateA;
+        }
+      );
     }
   }
   
@@ -254,12 +259,12 @@ export function ProfileContent() {
             </div>
           ) : (
             <div className="space-y-1">
-              {getFilteredPrayers().map((request) => (
-                prayerFilter === "answered" || request.is_answered ? (
-                  <AnsweredPrayerCard key={request.request_id} prayer={request} />
-                ) : (
-                  <PrayerRequestCard key={request.request_id} prayer={request} />
-                )
+              {getFilteredPrayers().map((prayer) => (
+                <PrayerRequestCard 
+                  key={prayer.request_id} 
+                  prayer={prayer} 
+                  showActions={true}
+                />
               ))}
             </div>
           )}

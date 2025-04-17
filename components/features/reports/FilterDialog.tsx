@@ -271,7 +271,7 @@ export default function FilterDialog({
           </div>
 
           {/* 카테고리 선택 - 기간별 기도제목만 보기 옵션이 활성화되지 않은 경우에만 표시 */}
-          {!onlyPeriodPrayers && (
+          {/* {!onlyPeriodPrayers && (
             <div className="grid gap-2">
               <Label htmlFor="category">카테고리</Label>
               <Select value={category} onValueChange={onCategoryChange}>
@@ -287,7 +287,7 @@ export default function FilterDialog({
                 </SelectContent>
               </Select>
             </div>
-          )}
+          )} */}
 
           {/* 개인 기간별 기도제목 포함 옵션 - 기간별 기도제목만 보기 옵션이 활성화되지 않은 경우에만 표시 */}
           {!onlyPeriodPrayers && (

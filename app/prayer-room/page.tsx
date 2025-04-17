@@ -133,10 +133,10 @@ export default function PrayerRoomPage() {
 
         <div className="flex items-center gap-2">
           {/* 검색창 */}
-          <div className="relative hidden md:flex">
+          {/* <div className="relative hidden md:flex">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input type="search" placeholder="검색" className="w-64 rounded-lg pl-8" />
-          </div>
+          </div> */}
 
           {/* 알림 버튼 */}
           <Button variant="ghost" size="icon" className="relative" asChild>

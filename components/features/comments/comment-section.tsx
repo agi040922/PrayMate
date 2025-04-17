@@ -90,7 +90,7 @@ export function CommentSection({ requestId, open, onOpenChange }: CommentSection
       })
       
       // 사용자 정보 추가
-      comment.users = {
+      comment.user = {
         user_id: user.id,
         name: user.user_metadata?.name || user.email,
         email: user.email
@@ -161,13 +161,13 @@ export function CommentSection({ requestId, open, onOpenChange }: CommentSection
                   {comments.map((comment) => (
                     <div key={comment.comment_id} className="flex gap-3">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src="" alt={comment.users?.name} />
-                        <AvatarFallback>{comment.users?.name?.substring(0, 2)}</AvatarFallback>
+                        <AvatarImage src="" alt={comment.user?.name} />
+                        <AvatarFallback>{comment.user?.name?.substring(0, 2)}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center justify-between">
                           <div className="flex items-baseline gap-2">
-                            <p className="text-sm font-semibold">{comment.users?.name}</p>
+                            <p className="text-sm font-semibold">{comment.user?.name}</p>
                             <p className="text-xs text-muted-foreground">
                               {new Date(comment.created_at).toLocaleString()}
                             </p>

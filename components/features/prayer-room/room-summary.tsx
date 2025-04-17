@@ -167,11 +167,11 @@ export function RoomSummary({ roomId }: RoomSummaryProps) {
             </Button>
           )}
           
-          {isParticipant && (
+          {/* {isParticipant && (
             <Badge className="w-full justify-center py-2" variant="outline">
               이미 참여 중인 기도방입니다
             </Badge>
-          )}
+          )} */}
         </div>
       </CardContent>
     </Card>

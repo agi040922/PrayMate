@@ -143,16 +143,16 @@ export default function ReportContainer() {
     
     report += `📅 ${periodText} 리포트 (${reportDate} 작성)\n\n`
 
-    // 필터 정보 추가
-    if (onlyPeriodPrayers) {
-      report += `📌 기간별 기도제목만 표시\n`
-    } else {
-      report += `📌 필터: ${category === 'all' ? '모든 카테고리' : category}\n`
-      if (includePersonalPrayers) {
-        report += `📔 개인 ${personalPrayerType === 'weekly' ? '주간' : personalPrayerType === 'monthly' ? '월간' : '연간'} 기도제목 포함\n`
-      }
-    }
-    report += '\n'
+    // // 필터 정보 추가
+    // if (onlyPeriodPrayers) {
+    //   report += `📌 기간별 기도제목만 표시\n`
+    // } else {
+    //   report += `📌 필터: ${category === 'all' ? '모든 카테고리' : category}\n`
+    //   if (includePersonalPrayers) {
+    //     report += `📔 개인 ${personalPrayerType === 'weekly' ? '주간' : personalPrayerType === 'monthly' ? '월간' : '연간'} 기도제목 포함\n`
+    //   }
+    // }
+    // report += '\n'
 
     // 개인 기도제목과 공유 기도제목 분리
     const personalItems = selectedItems.filter(item => item.isPersonalNote)

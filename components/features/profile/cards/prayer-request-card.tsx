@@ -11,8 +11,11 @@ import {
   CheckCircle,
   MessageCircle,
   HeartHandshake,
-  Plus, 
-  ChevronUp
+  Plus,
+  ChevronUp,
+  MoreVertical,
+  Pencil,
+  Trash2
 } from "lucide-react"
 import {
   Tooltip,
@@ -25,6 +28,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useToast } from "@/components/ui/use-toast"
 import { useProfile } from "@/lib/context/ProfileContext"
 import { formatDistanceToNow } from 'date-fns'
@@ -45,9 +55,10 @@ import {
 
 interface PrayerRequestCardProps {
   prayer: any
+  showActions?: boolean  // 관리 버튼 표시 여부 (수정, 삭제, 응답추가 등)
 }
 
-export function PrayerRequestCard({ prayer }: PrayerRequestCardProps) {
+export function PrayerRequestCard({ prayer, showActions = true }: PrayerRequestCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showAnswerDialog, setShowAnswerDialog] = useState(false)
@@ -121,14 +132,51 @@ export function PrayerRequestCard({ prayer }: PrayerRequestCardProps) {
             </div>
             <h3 className="font-semibold text-base">{prayer.title}</h3>
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setExpanded(!expanded)}
-            className="text-xs"
-          >
-            {expanded ? "접기" : "자세히"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setExpanded(!expanded)}
+              className="text-xs"
+            >
+              {expanded ? "접기" : "자세히"}
+            </Button>
+            
+            {/* 드롭다운 메뉴 추가 */}
+            {showActions && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    수정하기
+                  </DropdownMenuItem>
+                  
+                  {/* 응답되지 않은 기도제목에만 응답 표시 버튼 보이기 */}
+                  {!prayer.is_answered && (
+                    <DropdownMenuItem onClick={() => setShowAnswerDialog(true)}>
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      응답 표시
+                    </DropdownMenuItem>
+                  )}
+                  
+                  <DropdownMenuSeparator />
+                  
+                  <DropdownMenuItem 
+                    onClick={() => setConfirmDelete(true)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    삭제하기
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
         
         {/* 기도제목 내용 */}
@@ -302,36 +350,6 @@ export function PrayerRequestCard({ prayer }: PrayerRequestCardProps) {
                 </div>
               </div>
             )}
-            
-            {/* 기도제목 관리 버튼 */}
-            <div className="flex justify-end gap-2 mt-3">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-7 text-xs"
-                onClick={() => setShowEditDialog(true)}
-              >
-                수정
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-7 text-xs text-destructive"
-                onClick={() => setConfirmDelete(true)}
-              >
-                삭제
-              </Button>
-              {!prayer.is_answered && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="h-7 text-xs text-green-600"
-                  onClick={() => setShowAnswerDialog(true)}
-                >
-                  <CheckCircle className="h-3 w-3 mr-1" />응답 표시
-                </Button>
-              )}
-            </div>
           </div>
         )}
       </Card>

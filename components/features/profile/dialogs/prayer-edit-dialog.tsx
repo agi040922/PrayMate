@@ -25,6 +25,14 @@ import {
   deletePrayerAnswer
 } from "@/lib/supabase/prayer-requests"
 
+// 기본 카테고리 맵 정의
+const DEFAULT_CATEGORIES = [
+  { category_id: 1, name: "개인", description: "개인적인 기도제목" },
+  { category_id: 2, name: "공동체", description: "공동체를 위한 기도제목" },
+  { category_id: 3, name: "감사", description: "감사한 내용을 담은 기도제목" },
+  { category_id: 4, name: "중보기도", description: "타인을 위한 중보기도" }
+]
+
 interface PrayerEditDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -43,13 +51,16 @@ export function PrayerEditDialog({
   const [isAnonymous, setIsAnonymous] = useState(prayer?.is_anonymous || false)
   const [bibleReference, setBibleReference] = useState(prayer?.bible_verse?.reference || "")
   const [bibleText, setBibleText] = useState(prayer?.bible_verse?.text || "")
-  const [categoryId, setCategoryId] = useState<number | undefined>(prayer?.category_id)
+  const [categoryId, setCategoryId] = useState<number | undefined>(prayer?.category_id || undefined)
   const [isAnswered, setIsAnswered] = useState(prayer?.is_answered || false)
   const [answerContent, setAnswerContent] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   
-  const { categories } = useProfile()
+  const { categories: profileCategories } = useProfile()
   const { toast } = useToast()
+  
+  // 사용할 카테고리 목록 (profileCategories가 비어있으면 DEFAULT_CATEGORIES 사용)
+  const categories = profileCategories?.length > 0 ? profileCategories : DEFAULT_CATEGORIES
   
   // 응답 내용 불러오기
   useEffect(() => {
@@ -100,7 +111,7 @@ export function PrayerEditDialog({
         title,
         content,
         is_anonymous: isAnonymous,
-        category_id: categoryId === 0 ? undefined : categoryId,
+        category_id: categoryId,
         bible_verse: (bibleReference && bibleText) ? {
           reference: bibleReference,
           text: bibleText
@@ -175,7 +186,7 @@ export function PrayerEditDialog({
           <div className="grid gap-2">
             <Label htmlFor="category">카테고리</Label>
             <Select 
-              value={categoryId?.toString() || "none"} 
+              value={(categoryId !== undefined) ? categoryId.toString() : "none"} 
               onValueChange={(value) => setCategoryId(value === "none" ? undefined : parseInt(value))}
             >
               <SelectTrigger>

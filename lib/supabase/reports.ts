@@ -197,7 +197,7 @@ export async function getFilteredPrayerRequests(
     bibleVerse: item.bible_verse,
     author: item.is_anonymous ? '익명' : (item.users?.name || '알 수 없음'),
     authorId: item.user_id,
-    category: item.categories?.name || '미분류',
+    category: item.categories?.name || '기타',
     date: new Date(item.created_at).toISOString().split('T')[0],
     status: item.is_answered ? 'answered' : 'praying',
     response: undefined, // 응답 내용 (필요 시 별도 쿼리 필요)

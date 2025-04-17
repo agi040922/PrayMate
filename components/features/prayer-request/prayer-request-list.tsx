@@ -9,6 +9,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { MessageSquare, Heart, CheckCircle, Clock, Pencil, Trash2, MoreVertical, BookOpen, Plus } from "lucide-react"
 import { CommentSection } from "@/components/features/comments/comment-section"
 import { PrayerResponseDialog } from "@/components/features/prayer-request/prayer-response-dialog"
+import { PrayerEditDialog } from "@/components/features/profile/dialogs/prayer-edit-dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,6 +66,7 @@ export function PrayerRequestList({
   const [showComments, setShowComments] = useState<string | null>(null)
   const [showResponse, setShowResponse] = useState<string | null>(null)
   const [showDeleteAlert, setShowDeleteAlert] = useState<string | null>(null)
+  const [showEditDialog, setShowEditDialog] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
@@ -601,12 +603,15 @@ export function PrayerRequestList({
                   <DropdownMenuContent align="end">
                     {user?.id === prayer.user_id && (
                       <>
-                        <DropdownMenuItem onClick={() => handleMarkAsAnswered(prayer.request_id, prayer.is_answered)}>
-                          {prayer.is_answered ? "응답 취소" : "응답 표시"}
+                        <DropdownMenuItem onClick={() => setShowEditDialog(prayer.request_id)}>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          수정하기
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setShowResponse(prayer.request_id)}>
-                          응답 내용 추가
-                        </DropdownMenuItem>
+                        {!prayer.is_answered && (
+                          <DropdownMenuItem onClick={() => setShowResponse(prayer.request_id)}>
+                            응답 내용 추가
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuSeparator />
                       </>
                     )}
@@ -670,6 +675,101 @@ export function PrayerRequestList({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        
+        {/* 기도제목 수정 다이얼로그 */}
+        {showEditDialog && (
+          <PrayerEditDialog
+            open={!!showEditDialog}
+            onOpenChange={() => setShowEditDialog(null)}
+            prayer={prayerRequests.find(p => p.request_id === showEditDialog)}
+            onUpdate={() => {
+              // 기도 요청 목록 새로고침
+              const fetchPrayerRequests = async () => {
+                if (!roomId || !user) return;
+                
+                try {
+                  // 선택한 카테고리에 해당하는 기도 요청만 필터링
+                  let categoryId;
+                  if (category !== "all") {
+                    // 카테고리 ID 매핑
+                    const categoryMap: Record<string, number> = {
+                      "personal": 1, // 개인
+                      "community": 2, // 공동체
+                      "thanksgiving": 3, // 감사
+                      "intercession": 4, // 중보기도
+                    };
+                    categoryId = categoryMap[category];
+                  }
+                  
+                  const options: any = {
+                    limit: pageSize,
+                    offset: 0
+                  };
+                  if (categoryId) options.category_id = categoryId;
+                  if (answeredOnly) options.is_answered = true;
+                  
+                  // 기본 기도 요청 데이터 불러오기
+                  const data = await getPrayerRequests(roomId, options);
+                  
+                  // 각 기도 요청에 대한 상세 정보 불러오기
+                  const detailedRequests = await Promise.all(
+                    data.map(async (request) => {
+                      try {
+                        // 기도 응답 데이터 불러오기
+                        const answers = await getPrayerAnswers(request.request_id);
+                        
+                        // 댓글 데이터 불러오기
+                        const comments = await getComments(request.request_id);
+                        
+                        // 반응 데이터 불러오기
+                        const reactions = await getReactions(request.request_id);
+                        
+                        // 성경 구절 불러오기
+                        const bibleVerse = await getBibleVerseByRequestId(request.request_id);
+                        
+                        // 사용자 반응 상태 가져오기
+                        const userReaction = await getUserReactions(request.request_id, user.id);
+                        setUserReactions(prev => ({
+                          ...prev,
+                          [request.request_id]: userReaction
+                        }));
+                        
+                        // 댓글 수와 기도 수 계산
+                        const commentCount = comments?.length || 0;
+                        const prayCount = reactions?.filter(r => r.reaction_type === "praying")?.length || 0;
+                        
+                        return {
+                          ...request,
+                          answers,
+                          comments,
+                          reactions,
+                          commentCount,
+                          prayCount,
+                          bible_verse: bibleVerse
+                        };
+                      } catch (error) {
+                        console.error(`기도제목 ${request.request_id} 상세 정보 불러오기 실패:`, error);
+                        return request;
+                      }
+                    })
+                  );
+                  
+                  setPrayerRequests(detailedRequests);
+                  setPage(1); // 페이지 초기화
+                } catch (error) {
+                  console.error("기도 요청 목록 로딩 실패:", error);
+                  toast({
+                    title: "기도 요청 목록 로딩 실패",
+                    description: "기도 요청 목록을 불러오는데 문제가 발생했습니다.",
+                    variant: "destructive",
+                  });
+                }
+              };
+              
+              fetchPrayerRequests();
+            }}
+          />
+        )}
       </div>
     )
   }
@@ -837,12 +937,15 @@ export function PrayerRequestList({
                   <DropdownMenuContent align="end">
                     {user?.id === prayer.user_id && (
                       <>
-                        <DropdownMenuItem onClick={() => handleMarkAsAnswered(prayer.request_id, prayer.is_answered)}>
-                          {prayer.is_answered ? "응답 취소" : "응답 표시"}
+                        <DropdownMenuItem onClick={() => setShowEditDialog(prayer.request_id)}>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          수정하기
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setShowResponse(prayer.request_id)}>
-                          응답 내용 추가
-                        </DropdownMenuItem>
+                        {!prayer.is_answered && (
+                          <DropdownMenuItem onClick={() => setShowResponse(prayer.request_id)}>
+                            응답 내용 추가
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuSeparator />
                       </>
                     )}
@@ -907,6 +1010,101 @@ export function PrayerRequestList({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* 기도제목 수정 다이얼로그 */}
+      {showEditDialog && (
+        <PrayerEditDialog
+          open={!!showEditDialog}
+          onOpenChange={() => setShowEditDialog(null)}
+          prayer={prayerRequests.find(p => p.request_id === showEditDialog)}
+          onUpdate={() => {
+            // 기도 요청 목록 새로고침
+            const fetchPrayerRequests = async () => {
+              if (!roomId || !user) return;
+              
+              try {
+                // 선택한 카테고리에 해당하는 기도 요청만 필터링
+                let categoryId;
+                if (category !== "all") {
+                  // 카테고리 ID 매핑
+                  const categoryMap: Record<string, number> = {
+                    "personal": 1, // 개인
+                    "community": 2, // 공동체
+                    "thanksgiving": 3, // 감사
+                    "intercession": 4, // 중보기도
+                  };
+                  categoryId = categoryMap[category];
+                }
+                
+                const options: any = {
+                  limit: pageSize,
+                  offset: 0
+                };
+                if (categoryId) options.category_id = categoryId;
+                if (answeredOnly) options.is_answered = true;
+                
+                // 기본 기도 요청 데이터 불러오기
+                const data = await getPrayerRequests(roomId, options);
+                
+                // 각 기도 요청에 대한 상세 정보 불러오기
+                const detailedRequests = await Promise.all(
+                  data.map(async (request) => {
+                    try {
+                      // 기도 응답 데이터 불러오기
+                      const answers = await getPrayerAnswers(request.request_id);
+                      
+                      // 댓글 데이터 불러오기
+                      const comments = await getComments(request.request_id);
+                      
+                      // 반응 데이터 불러오기
+                      const reactions = await getReactions(request.request_id);
+                      
+                      // 성경 구절 불러오기
+                      const bibleVerse = await getBibleVerseByRequestId(request.request_id);
+                      
+                      // 사용자 반응 상태 가져오기
+                      const userReaction = await getUserReactions(request.request_id, user.id);
+                      setUserReactions(prev => ({
+                        ...prev,
+                        [request.request_id]: userReaction
+                      }));
+                      
+                      // 댓글 수와 기도 수 계산
+                      const commentCount = comments?.length || 0;
+                      const prayCount = reactions?.filter(r => r.reaction_type === "praying")?.length || 0;
+                      
+                      return {
+                        ...request,
+                        answers,
+                        comments,
+                        reactions,
+                        commentCount,
+                        prayCount,
+                        bible_verse: bibleVerse
+                      };
+                    } catch (error) {
+                      console.error(`기도제목 ${request.request_id} 상세 정보 불러오기 실패:`, error);
+                      return request;
+                    }
+                  })
+                );
+                
+                setPrayerRequests(detailedRequests);
+                setPage(1); // 페이지 초기화
+              } catch (error) {
+                console.error("기도 요청 목록 로딩 실패:", error);
+                toast({
+                  title: "기도 요청 목록 로딩 실패",
+                  description: "기도 요청 목록을 불러오는데 문제가 발생했습니다.",
+                  variant: "destructive",
+                });
+              }
+            };
+            
+            fetchPrayerRequests();
+          }}
+        />
+      )}
     </div>
   )
 }
