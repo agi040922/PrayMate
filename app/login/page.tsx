@@ -113,11 +113,8 @@ export default function LoginPage() {
           contact: registerContact
         }
       )
-      toast({
-        title: "회원가입 성공",
-        description: "이메일 확인 후 로그인해주세요.",
-      })
-      setActiveTab("login")
+      // 회원가입 성공 후 이메일 인증 안내 페이지로 리다이렉트
+      router.push(`/email-confirmation?email=${encodeURIComponent(registerEmail)}`)
     } catch (error) {
       console.error(error)
       toast({
@@ -251,7 +248,7 @@ export default function LoginPage() {
                       </svg>
                       Google
                     </Button>
-                    <Button
+                    {/* <Button
                       variant="outline"
                       className="w-full"
                       onClick={() => handleSocialLogin("kakao")}
@@ -270,7 +267,7 @@ export default function LoginPage() {
                         </g>
                       </svg>
                       Kakao
-                    </Button>
+                    </Button> */}
                   </div>
                 </CardContent>
               </form>
@@ -347,14 +344,14 @@ export default function LoginPage() {
                     </Button>
                   </div>
 
-                  <div className="relative mt-6">
+                  {/* <div className="relative mt-6">
                     <div className="absolute inset-0 flex items-center">
                       <span className="w-full border-t" />
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
                       <span className="bg-white px-2 text-muted-foreground">소셜 계정으로 가입</span>
                     </div>
-                  </div>
+                  </div> */}
 
                   <div className="mt-6 grid grid-cols-2 gap-4">
                     <Button
@@ -384,7 +381,7 @@ export default function LoginPage() {
                       </svg>
                       Google
                     </Button>
-                    <Button
+                    {/* <Button
                       variant="outline"
                       className="w-full"
                       onClick={() => handleSocialLogin("kakao")}
@@ -403,7 +400,7 @@ export default function LoginPage() {
                         </g>
                       </svg>
                       Kakao
-                    </Button>
+                    </Button> */}
                   </div>
                 </CardContent>
               </form>
