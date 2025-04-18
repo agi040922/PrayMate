@@ -82,7 +82,7 @@ export default function Home() {
               asChild 
               className="animate-pulse bg-blue-600 px-8 py-6 text-lg transition-all hover:bg-blue-700 hover:shadow-lg"
             >
-              <Link href="/support">후원하기</Link>
+              <Link href="/support?tab=online">후원하기</Link>
             </Button>
           </div>
         </div>

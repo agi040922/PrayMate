@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -15,9 +16,16 @@ import { LandingFooter } from "@/components/layout/landing-footer"
 import { HeartHandshake, Users, LineChart, Sparkles, Copy, Check } from "lucide-react"
 
 export default function SupportPage() {
+  const searchParams = useSearchParams()
+  const defaultTab = searchParams.get("tab") === "online" || searchParams.get("tab") === "account" 
+    ? searchParams.get("tab") 
+    : "online"
+    
+  const [activeTab, setActiveTab] = useState(defaultTab)
   const [copied, setCopied] = useState(false)
   const [donationType, setDonationType] = useState("onetime")
   const [showQR, setShowQR] = useState(false)
+  const [donationAmount, setDonationAmount] = useState<number | null>(null)
   
   // 계좌번호 복사 기능
   const copyToClipboard = (text: string) => {
@@ -25,6 +33,28 @@ export default function SupportPage() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
+  }
+  
+  // 금액 선택 처리
+  const handleAmountSelect = (amount: number) => {
+    setDonationAmount(amount)
+  }
+  
+  // 직접 입력 처리
+  const handleCustomAmount = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value ? parseInt(e.target.value) : null
+    setDonationAmount(value)
+  }
+  
+  // 후원하기 버튼 처리
+  const handleDonation = () => {
+    
+    // 실제 결제창으로 이동하는 로직을 여기에 구현
+    // 예: 카카오페이, 토스 등의 결제 API 연동
+    
+    const donationUrl = 'https://qr.kakaopay.com/FUXQLYnvP' // 네 카카오페이 송금 링크
+    window.open(donationUrl, '_blank') // 새 창으로 열기
+    
   }
   
   return (
@@ -83,8 +113,8 @@ export default function SupportPage() {
           <div className="mx-auto mb-10 max-w-3xl">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h3 className="font-medium text-slate-900">이번 달 목표 달성률</h3>
-                <p className="text-sm text-slate-500">목표: 100,000원</p>
+                <h3 className="font-medium text-slate-900">이번 달 후원</h3>
+                <p className="text-sm text-slate-500">목표: 50,000원</p>
               </div>
               <div className="text-right">
                 <span className="text-xl font-bold text-blue-600">0%</span>
@@ -133,7 +163,7 @@ export default function SupportPage() {
           </p>
           
           <div className="mx-auto max-w-3xl">
-            <Tabs defaultValue="online" className="w-full">
+            <Tabs value={activeTab as string} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="online">온라인 후원</TabsTrigger>
                 <TabsTrigger value="account">계좌 이체</TabsTrigger>
@@ -145,38 +175,54 @@ export default function SupportPage() {
                     <CardTitle>간편 결제로 후원하기</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="mb-6">
-                      <RadioGroup 
-                        value={donationType} 
-                        onValueChange={setDonationType}
-                        className="flex flex-col space-y-3"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="onetime" id="onetime" />
-                          <Label htmlFor="onetime">일시 후원</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="monthly" id="monthly" />
-                          <Label htmlFor="monthly">정기 후원 (월 단위)</Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-                    
                     <div className="grid gap-4">
                       <div className="grid grid-cols-3 gap-2">
-                        <Button variant="outline" className="w-full">10,000원</Button>
-                        <Button variant="outline" className="w-full">30,000원</Button>
-                        <Button variant="outline" className="w-full">50,000원</Button>
+                        <Button 
+                          variant={donationAmount === 10000 ? "default" : "outline"} 
+                          className="w-full"
+                          onClick={() => handleAmountSelect(10000)}
+                        >
+                          1,000원
+                        </Button>
+                        <Button 
+                          variant={donationAmount === 30000 ? "default" : "outline"} 
+                          className="w-full"
+                          onClick={() => handleAmountSelect(30000)}
+                        >
+                          3,000원
+                        </Button>
+                        <Button 
+                          variant={donationAmount === 50000 ? "default" : "outline"} 
+                          className="w-full"
+                          onClick={() => handleAmountSelect(50000)}
+                        >
+                          5,000원
+                        </Button>
                       </div>
                       
                       <div className="flex gap-2">
-                        <Input type="number" placeholder="직접 입력" min={1000} step={1000} />
+                        <Input 
+                          type="number" 
+                          placeholder="직접 입력" 
+                          min={1000} 
+                          step={1000}
+                          value={donationAmount && ![10000, 30000, 50000].includes(donationAmount) ? donationAmount : ''}
+                          onChange={handleCustomAmount}
+                        />
                         <span className="flex items-center">원</span>
                       </div>
                       
-                      <Button className="mt-2 w-full bg-blue-600 hover:bg-blue-700">
-                        {donationType === "onetime" ? "후원하기" : "정기 후원 시작하기"}
+                      <Button 
+                        className="mt-2 w-full bg-blue-600 hover:bg-blue-700"
+                        onClick={handleDonation}
+                      >
+                        후원하기
                       </Button>
+                      <div className="rounded-lg bg-blue-50 p-4">
+                      <p className="text-sm text-blue-800">
+                        웹 사이트의 경우 QR코드 혹은 계좌이체를 부탁드리겠습니다.. 감사합니다!
+                      </p>
+                    </div>
                       
                       <div className="mt-2 flex justify-center">
                         <Button 
@@ -186,17 +232,33 @@ export default function SupportPage() {
                         >
                           QR 코드로 후원하기
                         </Button>
+                        
+                        
                       </div>
                       
                       {showQR && (
                         <div className="mt-4 flex flex-col items-center justify-center">
                           <div className="mb-4 h-48 w-48 bg-gray-200 p-2">
-                            {/* 실제 QR 코드 이미지로 대체 */}
+                            {/* 여기에 QR 코드 이미지를 넣으세요 */}
+                            {/* 
+                              QR 코드 이미지 추가 방법:
+                              1. public/images/donation-qr.png와 같이 QR 코드 이미지 파일을 public 폴더에 저장하세요.
+                              2. 아래 주석 처리된 Image 컴포넌트의 주석을 해제하고 src 경로를 실제 QR 코드 이미지 경로로 수정하세요.
+                            */}
+                            
+                            <Image 
+                              src="/images/donation-qr.png" 
+                              alt="후원 QR 코드" 
+                              width={360} 
+                              height={360} 
+                              className="h-full w-full object-contain"
+                            /> 
+                           
                             <div className="flex h-full w-full items-center justify-center bg-white">
                               <p className="text-sm text-gray-500">QR 코드</p>
                             </div>
                           </div>
-                          <p className="text-sm text-gray-500">QR 코드를 스캔하여 후원하세요</p>
+                          <p className="text-sm text-gray-500">QR 코드를 스캔해주세요. 감사합니다!</p>
                         </div>
                       )}
                     </div>
@@ -245,7 +307,7 @@ export default function SupportPage() {
         </div>
       </section>
       
-      {/* 후원금 사용 내역 */}
+      {/* 후원금 사용 내역
       <section className="bg-slate-50 py-16">
         <div className="container mx-auto px-4">
           <h2 className="mb-12 text-center text-3xl font-bold">투명한 후원금 사용</h2>
@@ -293,7 +355,7 @@ export default function SupportPage() {
             </Card>
           </div>
         </div>
-      </section>
+      </section> */}
       
       {/* 감사 메시지 */}
       <section className="bg-gradient-to-r from-blue-600 to-indigo-700 py-16 text-white">
