@@ -257,7 +257,133 @@ export default function PrayerRoomPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-10">
-              <p className="mb-4 text-center text-muted-foreground">좌측 메뉴에서 기도방을 선택하세요</p>
+              <div className="relative w-full max-w-md h-60 mb-6">
+                {/* 귀여운 양 이미지 */}
+                <div className="sheep-animation absolute">
+                  <div className="sheep relative">
+                    <svg className="w-full h-full" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                      {/* 양의 몸통 */}
+                      <ellipse cx="100" cy="120" rx="55" ry="45" fill="#F5F5F5" />
+                      <circle cx="100" cy="80" r="40" fill="#FFFFFF" />
+                      
+                      {/* 양의 귀 */}
+                      <ellipse cx="70" cy="65" rx="15" ry="25" fill="#F5F5F5" transform="rotate(-20 70 65)" />
+                      <ellipse cx="130" cy="65" rx="15" ry="25" fill="#F5F5F5" transform="rotate(20 130 65)" />
+                      
+                      {/* 양의 얼굴 특징 */}
+                      <circle cx="85" cy="75" r="6" fill="#333333" className="sheep-eye-left" /> {/* 왼쪽 눈 */}
+                      <circle cx="115" cy="75" r="6" fill="#333333" className="sheep-eye-right" /> {/* 오른쪽 눈 */}
+                      
+                      {/* 양의 귀여운 눈 반짝임 */}
+                      <circle cx="82" cy="72" r="2" fill="#FFFFFF" />
+                      <circle cx="112" cy="72" r="2" fill="#FFFFFF" />
+                      
+                      {/* 양의 코와 입 */}
+                      <ellipse cx="100" cy="90" rx="8" ry="6" fill="#FFCCCC" />
+                      <path d="M90,98 Q100,105 110,98" stroke="#666666" strokeWidth="2" fill="none" className="sheep-mouth" />
+                      
+                      {/* 양의 다리 */}
+                      <rect x="80" y="155" width="8" height="25" rx="4" fill="#D8D8D8" className="sheep-leg-left" />
+                      <rect x="115" y="155" width="8" height="25" rx="4" fill="#D8D8D8" className="sheep-leg-right" />
+                    </svg>
+                    
+                    {/* 양이 가리키는 방향 화살표 - 동적으로 보였다 사라졌다 함 */}
+                    <div className="pointing-arrow opacity-0 absolute -top-10 left-20">
+                      <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19 12H5M12 5L5 12L12 19" stroke="#3B82F6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p className="text-center text-muted-foreground text-lg font-medium px-4">좌측 메뉴에서 기도방을 선택하세요</p>
+              
+              {/* 양 애니메이션 스타일 */}
+              <style jsx>{`
+                .sheep-animation {
+                  width: 120px;
+                  height: 120px;
+                  animation: sheep-movement 12s infinite;
+                  transform-origin: center;
+                }
+                
+                .sheep {
+                  width: 100%;
+                  height: 100%;
+                  transform-origin: center;
+                  animation: sheep-bounce 0.8s infinite alternate;
+                }
+                
+                .pointing-arrow {
+                  animation: arrow-appear 12s infinite;
+                }
+                
+                .sheep-leg-left, .sheep-leg-right {
+                  animation: leg-movement 0.8s infinite alternate;
+                  transform-origin: top center;
+                }
+                
+                .sheep-leg-right {
+                  animation-delay: 0.4s;
+                }
+                
+                .sheep-eye-left, .sheep-eye-right {
+                  animation: blink 3s infinite;
+                }
+                
+                .sheep-mouth {
+                  animation: mouth-movement 8s infinite;
+                }
+                
+                @keyframes sheep-movement {
+                  0%, 100% { transform: translateX(30%) rotate(0deg); }
+                  20% { transform: translateX(10%) rotate(5deg); }
+                  30%, 45% { transform: translateX(-30%) rotate(-5deg); }
+                  50%, 65% { transform: translateX(-30%) rotate(-5deg) scale(1.1); }
+                  70% { transform: translateX(0%) rotate(0deg); }
+                  85% { transform: translateX(20%) rotate(5deg); }
+                }
+                
+                @keyframes sheep-bounce {
+                  0% { transform: translateY(0); }
+                  100% { transform: translateY(-5px); }
+                }
+                
+                @keyframes arrow-appear {
+                  0%, 30%, 70%, 100% { opacity: 0; }
+                  45%, 55% { opacity: 1; }
+                }
+                
+                @keyframes leg-movement {
+                  0% { transform: rotate(-5deg); }
+                  100% { transform: rotate(5deg); }
+                }
+                
+                @keyframes blink {
+                  0%, 48%, 52%, 100% { transform: scaleY(1); }
+                  50% { transform: scaleY(0.1); }
+                }
+                
+                @keyframes mouth-movement {
+                  0%, 45%, 55%, 100% { d: path('M90,98 Q100,105 110,98'); }
+                  50% { d: path('M90,98 Q100,95 110,98'); }
+                }
+                
+                /* 반응형 조정 */
+                @media (min-width: 640px) {
+                  .sheep-animation {
+                    width: 150px;
+                    height: 150px;
+                  }
+                }
+                
+                @media (min-width: 1024px) {
+                  .sheep-animation {
+                    width: 180px;
+                    height: 180px;
+                  }
+                }
+              `}</style>
             </div>
           )}
 
