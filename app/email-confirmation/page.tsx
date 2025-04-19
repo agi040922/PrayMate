@@ -24,7 +24,7 @@ export default function EmailConfirmationPage() {
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-slate-50">
       <div className="relative z-10 w-full max-w-md px-4">
         <Link href="/" className="mb-8 flex items-center justify-center">
-          <h1 className="text-4xl font-bold text-slate-800">기도모아</h1>
+          <h1 className="text-4xl font-bold text-slate-800">프레이니</h1>
         </Link>
         
         <Card className="w-full border shadow-lg">
@@ -44,7 +44,7 @@ export default function EmailConfirmationPage() {
               <h3 className="mb-2 font-semibold text-slate-900">다음 단계:</h3>
               <ol className="ml-5 list-decimal text-slate-700">
                 <li className="mb-1">이메일함을 확인해주세요</li>
-                <li className="mb-1">기도모아에서 보낸 인증 이메일을 열어주세요</li>
+                <li className="mb-1">프레이니에서 보낸 인증 이메일을 열어주세요</li>
                 <li className="mb-1">이메일에 있는 인증 링크를 클릭해주세요</li>
                 <li>인증이 완료되면 로그인할 수 있습니다</li>
               </ol>

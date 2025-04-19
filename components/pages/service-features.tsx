@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react"
 import { motion, useAnimation, useInView } from "framer-motion"
-import { Clock, Shield, Smartphone, BookOpen } from "lucide-react"
+import { Clock, Shield, Smartphone, BookOpen, Brain } from "lucide-react"
 
 const features = [
   {
@@ -11,9 +11,9 @@ const features = [
     description: "기도제목을 실시간으로 공유하고 함께 기도할 수 있습니다.",
   },
   {
-    icon: <Shield className="h-10 w-10 text-sky-500" />,
-    title: "보안성 강화",
-    description: "기도방 별 접근 권한 설정으로 안전하게 기도제목을 공유합니다.",
+    icon: <Brain className="h-10 w-10 text-sky-500" />,
+    title: "인공지능 제안",
+    description: "기도를 입력하면 인공지능이 기도와 말씀을을 제안합니다.",
   },
   {
     icon: <Smartphone className="h-10 w-10 text-sky-500" />,
@@ -44,7 +44,7 @@ export function ServiceFeatures() {
         <div className="mb-12 text-center">
           <h2 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">특별한 기능</h2>
           <p className="mx-auto max-w-2xl text-lg text-gray-600">
-            기도모아는 기도제목 관리와 공유를 위한 다양한 기능을 제공합니다.
+          프레이니는 기도제목 관리와 공유를 위한 다양한 기능을 제공합니다.
           </p>
         </div>
 

@@ -22,9 +22,9 @@ export function ServiceInfoDialog() {
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>기도모아 서비스 안내</DialogTitle>
+          <DialogTitle>프레이니 서비스 안내</DialogTitle>
           <DialogDescription>
-            기도모아는 단체가 온라인 방을 만들어 구성원이 각자의 기도제목을 간편히 등록하고 실시간으로 확인, 관리할 수
+            프레이니는 단체가 온라인 방을 만들어 구성원이 각자의 기도제목을 간편히 등록하고 실시간으로 확인, 관리할 수
             있도록 지원하는 웹 기반 서비스입니다.
           </DialogDescription>
         </DialogHeader>

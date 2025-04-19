@@ -28,7 +28,7 @@ export function LandingNavbar() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* 로고 */}
         <Link href="/" className="flex items-center">
-          <span className={`text-xl font-bold ${isScrolled ? "text-sky-600" : "text-white"}`}>기도모아</span>
+          <span className={`text-xl font-bold ${isScrolled ? "text-sky-600" : "text-white"}`}>프레이니</span>
         </Link>
 
         {/* 데스크톱 메뉴 */}

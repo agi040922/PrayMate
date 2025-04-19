@@ -47,7 +47,7 @@ export function Testimonials() {
         <div className="mb-12 text-center">
           <h2 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">사용자 후기</h2>
           <p className="mx-auto max-w-2xl text-lg text-gray-600">
-            기도모아를 통해 변화된 사용자들의 이야기를 들어보세요.
+            프레이니를 통해 변화된 사용자들의 이야기를 들어보세요.
           </p>
         </div>
 

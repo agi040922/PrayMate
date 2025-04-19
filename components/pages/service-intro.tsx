@@ -31,8 +31,8 @@ export function ServiceIntro() {
           >
             <div className="overflow-hidden rounded-lg shadow-xl">
               <img
-                src="/placeholder.svg?height=600&width=800"
-                alt="기도모아 서비스 소개"
+                src="\images\service-intro.png"
+                alt="프레이니 서비스 소개"
                 className="h-auto w-full object-cover"
               />
             </div>
@@ -54,7 +54,7 @@ export function ServiceIntro() {
               하나님의 응답을 함께 경험하세요
             </h2>
             <p className="mb-6 text-lg text-gray-600">
-              기도모아는 단체가 온라인 방을 만들어 구성원이 각자의 기도제목을 간편히 등록하고 실시간으로 확인, 관리할 수
+              프레이니는 단체가 온라인 방을 만들어 구성원이 각자의 기도제목을 간편히 등록하고 실시간으로 확인, 관리할 수
               있도록 지원하는 웹 기반 서비스입니다.
             </p>
             <p className="text-lg text-gray-600">

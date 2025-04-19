@@ -9,6 +9,7 @@ import { HowToUse } from "@/components/pages/how-to-use"
 import { BibleVerseSection } from "@/components/pages/bible-verse-section"
 import { PrayerGallery } from "@/components/pages/prayer-gallery"
 import { ServiceIntro } from "@/components/pages/service-intro"
+import { WhyPraynie } from "@/components/pages/why-praynie"
 import { DonationBanner } from "@/components/donation/donation-banner"
 import { HeartHandshake } from "lucide-react"
 
@@ -23,7 +24,7 @@ export default function Home() {
         {/* 배경 이미지 */}
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: "url('/placeholder.svg?height=1080&width=1920')" }}
+          style={{ backgroundImage: "url('/images/mainpage.png')" }}
         >
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
         </div>
@@ -63,8 +64,12 @@ export default function Home() {
         </div>
       </section>
 
+      {/* 이름 소개 섹션 */}
+      <WhyPraynie />
+      
       {/* 서비스 소개 섹션 */}
       <ServiceIntro />
+      
       
       {/* 후원 버튼 섹션 */}
       <section className="bg-gradient-to-r from-blue-50 to-indigo-50 py-16">

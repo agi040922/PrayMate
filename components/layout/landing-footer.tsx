@@ -8,7 +8,7 @@ export function LandingFooter() {
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           {/* 로고 및 소개 */}
           <div>
-            <h2 className="mb-4 text-xl font-bold">기도모아</h2>
+            <h2 className="mb-4 text-xl font-bold">프레이니</h2>
             <p className="mb-4 text-gray-400">
               함께 기도하고 응답을 나누는 공간입니다. 기도제목을 모아 공동체와 함께 기도해보세요.
             </p>
@@ -88,7 +88,7 @@ export function LandingFooter() {
         </div>
 
         <div className="mt-8 border-t border-gray-800 pt-8 text-center">
-          <p className="text-gray-400">© 2023 기도모아. All rights reserved.</p>
+          <p className="text-gray-400">© 2025 프레이니. All rights reserved.</p>
         </div>
       </div>
     </footer>

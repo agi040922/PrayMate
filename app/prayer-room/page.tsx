@@ -134,7 +134,7 @@ export default function PrayerRoomPage() {
       {/* Header */}
       <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
         <div className="hidden md:flex">
-          <span className="text-xl font-bold text-sky-600">기도모아</span>
+          <span className="text-xl font-bold text-sky-600">프레이니</span>
         </div>
 
         {/* Mobile Sidebar Trigger */}

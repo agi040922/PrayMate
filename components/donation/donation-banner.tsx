@@ -57,7 +57,7 @@ export function DonationBanner() {
             <p className="font-medium text-slate-800">
               "당신의 기도가 누군가의 삶을 바꿉니다"
             </p>
-            <p className="text-sm text-slate-600">기도모아는 후원으로 운영되고 있어요. 💖 함께해 주시겠어요?</p>
+            <p className="text-sm text-slate-600">프레이니는 후원으로 운영되고 있어요. 💖 함께해 주시겠어요?</p>
           </div>
         </div>
         

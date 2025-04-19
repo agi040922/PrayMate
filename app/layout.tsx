@@ -8,7 +8,7 @@ import { Toaster } from "@/components/ui/toaster"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "기도모아 - 함께 기도하는 공간",
+  title: "프레이니 - 함께 기도하는 친구구",
   description: "기도제목을 모아 함께 기도하고 응답을 나누는 공간입니다.",
 }
 

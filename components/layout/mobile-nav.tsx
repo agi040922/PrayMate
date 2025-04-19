@@ -18,7 +18,7 @@ export function MobileNav() {
         </SheetTrigger>
         <SheetContent side="left" className="flex w-72 flex-col p-0">
           <SheetHeader className="border-b p-4">
-            <SheetTitle className="text-left">기도모아</SheetTitle>
+            <SheetTitle className="text-left">프레이니</SheetTitle>
           </SheetHeader>
           <div className="p-4">
             <div className="relative mb-4">
@@ -54,7 +54,7 @@ export function MobileNav() {
         </SheetContent>
       </Sheet>
       <Link href="/" className="flex items-center gap-2 font-semibold">
-        <span className="text-xl font-bold text-sky-600">기도모아</span>
+        <span className="text-xl font-bold text-sky-600">프레이니</span>
       </Link>
     </div>
   )

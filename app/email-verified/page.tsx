@@ -25,7 +25,7 @@ export default function EmailVerifiedPage() {
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-slate-50">
       <div className="relative z-10 w-full max-w-md px-4">
         <Link href="/" className="mb-8 flex items-center justify-center">
-          <h1 className="text-4xl font-bold text-slate-800">기도모아</h1>
+          <h1 className="text-4xl font-bold text-slate-800">프레이니</h1>
         </Link>
         
         <Card className="w-full border shadow-lg">
@@ -43,7 +43,7 @@ export default function EmailVerifiedPage() {
             
             <div className="mb-6 rounded-lg bg-green-50 p-4">
               <p className="text-green-800">
-                이제 기도모아 서비스의 모든 기능을 이용하실 수 있습니다. 
+                이제 프레이니 서비스의 모든 기능을 이용하실 수 있습니다. 
                 로그인하여 기도 요청을 등록하고 다른 사람들과 기도를 나눠보세요.
               </p>
             </div>

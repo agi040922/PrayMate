@@ -44,7 +44,7 @@ export function HowToUse() {
       <div className="container mx-auto px-4">
         <div className="mb-12 text-center">
           <h2 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">사용 방법</h2>
-          <p className="mx-auto max-w-2xl text-lg text-gray-600">기도모아는 간단한 4단계로 사용할 수 있습니다.</p>
+          <p className="mx-auto max-w-2xl text-lg text-gray-600">프레이니는 간단한 4단계로 사용할 수 있습니다.</p>
         </div>
 
         <div ref={ref} className="relative">

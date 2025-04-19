@@ -94,7 +94,7 @@ export default function CompleteProfilePage() {
       {/* Main Content */}
       <div className="relative z-10 w-full max-w-md px-4">
         <div className="mb-8 flex items-center justify-center">
-          <h1 className="text-4xl font-bold text-white">기도모아</h1>
+          <h1 className="text-4xl font-bold text-white">프레이니</h1>
         </div>
 
         <Card className="w-full bg-white/95 backdrop-blur">

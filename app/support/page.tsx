@@ -67,7 +67,7 @@ export default function SupportPage() {
           <h1 className="mb-4 text-4xl font-bold md:text-5xl">함께하는 기도의 여정</h1>
           <p className="mx-auto max-w-2xl text-lg text-blue-100">
             여러분의 후원은 더 많은 사람들이 함께 기도하고 위로받을 수 있는 공간을 만듭니다.
-            기도모아는 여러분의 소중한 후원으로 운영됩니다.
+            프레이니는 여러분의 소중한 후원으로 운영됩니다.
           </p>
         </div>
       </section>
@@ -159,7 +159,7 @@ export default function SupportPage() {
         <div className="container mx-auto px-4">
           <h2 className="mb-6 text-center text-3xl font-bold">후원 방법</h2>
           <p className="mx-auto mb-12 max-w-2xl text-center text-gray-600">
-            여러분에게 편리한 방법으로 기도모아를 후원해 주세요.
+            여러분에게 편리한 방법으로 프레이니를 후원해 주세요.
           </p>
           
           <div className="mx-auto max-w-3xl">
@@ -178,25 +178,25 @@ export default function SupportPage() {
                     <div className="grid gap-4">
                       <div className="grid grid-cols-3 gap-2">
                         <Button 
-                          variant={donationAmount === 10000 ? "default" : "outline"} 
+                          variant={donationAmount === 1000 ? "default" : "outline"} 
                           className="w-full"
                           onClick={() => handleAmountSelect(10000)}
                         >
                           1,000원
                         </Button>
                         <Button 
-                          variant={donationAmount === 30000 ? "default" : "outline"} 
+                          variant={donationAmount === 5000 ? "default" : "outline"} 
                           className="w-full"
-                          onClick={() => handleAmountSelect(30000)}
-                        >
-                          3,000원
-                        </Button>
-                        <Button 
-                          variant={donationAmount === 50000 ? "default" : "outline"} 
-                          className="w-full"
-                          onClick={() => handleAmountSelect(50000)}
+                          onClick={() => handleAmountSelect(5000)}
                         >
                           5,000원
+                        </Button>
+                        <Button 
+                          variant={donationAmount === 10000 ? "default" : "outline"} 
+                          className="w-full"
+                          onClick={() => handleAmountSelect(10000)}
+                        >
+                          10,000원
                         </Button>
                       </div>
                       
@@ -206,7 +206,7 @@ export default function SupportPage() {
                           placeholder="직접 입력" 
                           min={1000} 
                           step={1000}
-                          value={donationAmount && ![10000, 30000, 50000].includes(donationAmount) ? donationAmount : ''}
+                          value={donationAmount && ![1000, 5000, 10000].includes(donationAmount) ? donationAmount : ''}
                           onChange={handleCustomAmount}
                         />
                         <span className="flex items-center">원</span>
@@ -362,7 +362,7 @@ export default function SupportPage() {
         <div className="container mx-auto px-4 text-center">
           <h2 className="mb-6 text-3xl font-bold">감사의 말씀</h2>
           <p className="mx-auto mb-8 max-w-2xl text-lg text-blue-100">
-            여러분의 소중한 후원 덕분에 기도모아는 더 많은 사람들에게 위로와 격려를 전할 수 있습니다.
+            여러분의 소중한 후원 덕분에 프레이니는 더 많은 사람들에게 위로와 격려를 전할 수 있습니다.
             함께해주셔서 진심으로
             감사드립니다.
           </p>
@@ -378,7 +378,7 @@ export default function SupportPage() {
   )
 } 
 
-// 축하드립니다! 기도모아 웹사이트에 후원 배너와 후원 페이지가 성공적으로 추가되었습니다. 구현된 내용을 요약하면 다음과 같습니다:
+// 축하드립니다! 프레이니 웹사이트에 후원 배너와 후원 페이지가 성공적으로 추가되었습니다. 구현된 내용을 요약하면 다음과 같습니다:
 // 후원 배너 (DonationBanner) 컴포넌트:
 // 사용자 친화적인 하단 고정형 배너로 구현했습니다.
 // "당신의 기도가 누군가의 삶을 바꿉니다" 메시지와 함께 따뜻한 감성을 담았습니다.

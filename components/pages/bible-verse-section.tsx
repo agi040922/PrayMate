@@ -19,7 +19,7 @@ export function BibleVerseSection() {
       {/* 배경 */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/placeholder.svg?height=600&width=1200&text=성경+배경')" }}
+        style={{ backgroundImage: "url('images/bible_verse.png')" }}
       >
         <div className="absolute inset-0 bg-black/70" />
       </div>
