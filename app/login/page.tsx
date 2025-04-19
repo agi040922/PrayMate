@@ -12,6 +12,7 @@ import { signInWithEmail, signUp, signInWithOAuth } from "@/lib/supabase/users"
 import { useAuth } from "@/lib/context/AuthContext"
 import { useToast } from "@/components/ui/use-toast"
 import { Provider } from "@supabase/supabase-js"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login")
@@ -131,7 +132,42 @@ export default function LoginPage() {
   const handleSocialLogin = async (provider: Provider) => {
     try {
       setIsLoading(true)
-      await signInWithOAuth(provider)
+      
+      // 모바일 환경인지 확인
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        // 모바일 환경에서는 외부 브라우저로 인증 페이지 열기
+        const { data, error } = await createClientComponentClient().auth.signInWithOAuth({
+          provider,
+          options: {
+            redirectTo: window.location.origin + '/auth/callback',
+            skipBrowserRedirect: true,
+          },
+        });
+        
+        if (error) throw error;
+        
+        if (data?.url) {
+          // 새 창에서 URL 열기 전에 사용자에게 안내
+          toast({
+            title: "외부 브라우저로 이동합니다",
+            description: "로그인을 완료한 후 이 앱으로 돌아와주세요.",
+            duration: 5000,
+          });
+          
+          // 1초 후 외부 브라우저로 열기
+          setTimeout(() => {
+            window.open(data.url, '_blank');
+          }, 1000);
+          
+          setIsLoading(false);
+          return;
+        }
+      } else {
+        // 데스크톱 환경에서는 기존 방식대로 처리
+        await signInWithOAuth(provider);
+      }
     } catch (error) {
       console.error(error)
       toast({

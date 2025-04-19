@@ -121,6 +121,15 @@ export default function PrayerRoomPage() {
     setSelectedRoomId(roomId)
   }
   
+  // 모바일 사이드바 닫기
+  const handleCloseSidebar = () => {
+    // sheet 닫기 트리거 (ref를 통해 접근할 수도 있지만, 간단한 방법 사용)
+    const closeButton = document.querySelector('[data-state="open"] button[data-radix-collection-item]');
+    if (closeButton) {
+      (closeButton as HTMLButtonElement).click();
+    }
+  }
+  
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">

@@ -20,6 +20,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { PrayerRoomList } from "@/components/features/prayer-room/prayer-room-list"
+import { JoinRoomForm } from "@/components/features/prayer-room/join-room-form"
+import { CreateRoomForm } from "@/components/features/prayer-room/create-room-form"
+import { ManageRoomForm } from "@/components/features/prayer-room/manage-room-form"
+import { ViewMembersForm } from "@/components/features/prayer-room/view-members-form"
 
 interface PrayerRoomSidebarProps {
   className?: string
@@ -33,6 +39,12 @@ export function PrayerRoomSidebar({ className, onSelect }: PrayerRoomSidebarProp
   const [rooms, setRooms] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showJoinForm, setShowJoinForm] = useState(false)
+  const [showManageForm, setShowManageForm] = useState(false)
+  const [showMembersForm, setShowMembersForm] = useState(false)
+  const [isSheetOpen, setIsSheetOpen] = useState(false)
   
   const { user } = useAuth()
   const { toast } = useToast()
@@ -82,95 +94,165 @@ export function PrayerRoomSidebar({ className, onSelect }: PrayerRoomSidebarProp
     setOpenSearchDialog(false)
   }
 
+  // 기도방 관리 모달 열기
+  const handleManageRoom = (roomId: string) => {
+    setSelectedRoomId(roomId)
+    setShowManageForm(true)
+  }
+
+  // 기도방 멤버 확인 모달 열기
+  const handleViewMembers = (roomId: string) => {
+    setSelectedRoomId(roomId)
+    setShowMembersForm(true)
+  }
+
+  // 기도방 선택 처리
+  const handleSelectRoom = (roomId: string) => {
+    if (onSelect) {
+      onSelect(roomId)
+    }
+    closeSidebar()
+  }
+
+  // 사이드바 닫기 함수
+  const closeSidebar = () => {
+    setIsSheetOpen(false)
+  }
+
   return (
-    <div className={cn("pb-12", className)}>
-      <div className="space-y-4 py-4">
-        <div className="px-4 py-2">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="px-2 text-lg font-semibold tracking-tight">내 기도방</h2>
+    <>
+      {/* 모바일 사이드바 - Sheet 컴포넌트로 구현 */}
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent side="left" className="w-[300px] sm:w-[400px] p-0">
+          <div className={cn("flex h-full flex-col", className)}>
+            <SheetHeader className="p-4 border-b">
+              <SheetTitle>내 기도방</SheetTitle>
+            </SheetHeader>
+            
+            <div className="p-4 space-y-4">
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => setShowCreateForm(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  기도방 생성
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => setShowJoinForm(true)}
+                >
+                  참여하기
+                </Button>
+              </div>
+              
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="기도방 검색..."
+                  className="pl-8"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <ScrollArea className="flex-1 p-4">
+              <PrayerRoomList 
+                onManageRoom={handleManageRoom} 
+                onViewMembers={handleViewMembers}
+                onSelectRoom={handleSelectRoom}
+                closeSidebar={closeSidebar}
+              />
+            </ScrollArea>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* 데스크톱 사이드바 */}
+      <div className={cn("flex h-full flex-col", className)}>
+        <div className="p-4 space-y-4">
+          <div className="flex items-center gap-2">
             <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => setOpenSearchDialog(true)}
-              title="기도방 검색"
+              variant="outline" 
+              size="sm" 
+              className="flex-1"
+              onClick={() => setShowCreateForm(true)}
             >
-              <Search className="h-4 w-4" />
+              <Plus className="h-4 w-4 mr-2" />
+              기도방 생성
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex-1"
+              onClick={() => setShowJoinForm(true)}
+            >
+              참여하기
             </Button>
           </div>
           
-          <div className="space-y-1">
-            <Button
-              variant="secondary"
-              className="w-full justify-start"
-              onClick={() => setOpenCreateDialog(true)}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              새 기도방 만들기
-            </Button>
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="기도방 검색..."
+              className="pl-8"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
         </div>
-        <div className="px-4">
-          <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">참여 중인 기도방</h2>
-          {loading ? (
-            <div className="flex justify-center py-4">
-              <p className="text-sm text-muted-foreground">로딩 중...</p>
-            </div>
-          ) : rooms.length > 0 ? (
-            <ScrollArea className="h-[calc(100vh-12rem)]">
-              <div className="space-y-1">
-                {rooms.map((room) => (
-                  <Button
-                    key={room.room_id}
-                    variant={selectedRoomId === room.room_id ? "secondary" : "ghost"}
-                    className={cn(
-                      "w-full justify-start gap-1",
-                      selectedRoomId === room.room_id && "bg-accent"
-                    )}
-                    onClick={() => handleRoomClick(room.room_id)}
-                  >
-                    <div className="truncate">{room.title}</div>
-                    {room.role === "admin" && (
-                      <Badge variant="outline" className="ml-auto">관리자</Badge>
-                    )}
-                  </Button>
-                ))}
-              </div>
-            </ScrollArea>
-          ) : (
-            <div className="flex justify-center py-4">
-              <p className="text-sm text-muted-foreground">참여 중인 기도방이 없습니다</p>
-            </div>
-          )}
-        </div>
+        
+        <ScrollArea className="flex-1 p-4">
+          <PrayerRoomList 
+            onManageRoom={handleManageRoom} 
+            onViewMembers={handleViewMembers} 
+            onSelectRoom={onSelect}
+          />
+        </ScrollArea>
       </div>
-      
-      {/* 기도방 관리 다이얼로그는 선택된 기도방과 관리자 권한이 있을 때만 표시 */}
-      {selectedRoomId && (
-        <ManagePrayerRoomDialog 
-          open={openManageDialog} 
-          onOpenChange={setOpenManageDialog}
-          roomId={selectedRoomId}
+
+      {/* 기도방 생성 폼 */}
+      {showCreateForm && (
+        <CreateRoomForm
+          onClose={() => setShowCreateForm(false)}
         />
       )}
-      
-      {/* 기도방 생성 다이얼로그 */}
-      <CreatePrayerRoomDialog 
-        open={openCreateDialog} 
-        onOpenChange={setOpenCreateDialog} 
-      />
-      
-      {/* 기도방 검색 다이얼로그 */}
-      <Dialog open={openSearchDialog} onOpenChange={setOpenSearchDialog}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>기도방 검색</DialogTitle>
-            <DialogDescription>이름 또는 코드로 기도방을 검색하고 참여하세요.</DialogDescription>
-          </DialogHeader>
-          <div className="mt-4">
-            <PrayerRoomSearch onJoin={handleJoinRoom} />
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+
+      {/* 기도방 참여 폼 */}
+      {showJoinForm && (
+        <JoinRoomForm
+          onClose={() => setShowJoinForm(false)}
+        />
+      )}
+
+      {/* 기도방 관리 폼 */}
+      {showManageForm && selectedRoomId && (
+        <ManageRoomForm
+          roomId={selectedRoomId}
+          onClose={() => {
+            setShowManageForm(false)
+            setSelectedRoomId(null)
+          }}
+        />
+      )}
+
+      {/* 기도방 멤버 확인 폼 */}
+      {showMembersForm && selectedRoomId && (
+        <ViewMembersForm
+          roomId={selectedRoomId}
+          onClose={() => {
+            setShowMembersForm(false)
+            setSelectedRoomId(null)
+          }}
+        />
+      )}
+    </>
   )
 }
