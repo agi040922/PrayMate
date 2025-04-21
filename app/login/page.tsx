@@ -39,13 +39,6 @@ export default function LoginPage() {
     }
   }, [user, router])
   
-  // 로그인 성공 후 리다이렉트 처리하는 함수
-  const handleRedirectAfterLogin = () => {
-    // 현재 URL의 origin을 기준으로 리다이렉트 (도메인 유지)
-    const currentOrigin = window.location.origin;
-    router.push(`${currentOrigin}/prayer-room`);
-  }
-  
   // 이메일/비밀번호 로그인 처리
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -66,7 +59,7 @@ export default function LoginPage() {
         title: "로그인 성공",
         description: "환영합니다!",
       })
-      handleRedirectAfterLogin()
+      router.push("/prayer-room")
     } catch (error) {
       console.error(error)
       toast({
@@ -157,15 +150,14 @@ export default function LoginPage() {
         );
         
         if (confirmed) {
-          // 현재 URL의 origin을 유지하도록 수정
-          const currentOrigin = window.location.origin;
-          const loginUrl = `${currentOrigin}/login`;
+          // 현재 URL을 외부 브라우저로 열기
+          const loginUrl = `${window.location.origin}/login`;
           
           // iOS
           if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
             window.location.href = `googlechrome://navigate?url=${encodeURIComponent(loginUrl)}`;
             setTimeout(function() {
-              window.location.href = `safari-${loginUrl}`;
+              window.location.href = `safari-https://praying.vercel.app/login`;
             }, 2000);
           } 
           // Android
@@ -176,12 +168,8 @@ export default function LoginPage() {
         }
       }
       
-      // 현재 도메인을 가져와서 콜백에 전달
-      const currentOrigin = window.location.origin;
-      
       // 정상적인 경우 기존 로그인 처리 진행
-      await signInWithOAuth(provider, currentOrigin);
-      
+      await signInWithOAuth(provider)
     } catch (error) {
       console.error(error)
       toast({

@@ -37,30 +37,17 @@ export async function signInWithEmail(email: string, password: string) {
 }
 
 // 소셜 로그인 (구글, 카카오 등)
-export const signInWithOAuth = async (provider: Provider, origin?: string) => {
-  try {
-    // 현재 창의 URL 원본에서 리다이렉션 URL 가져오기
-    const redirectUrl = new URL(`${window.location.origin}/auth/callback`);
-    
-    // 원래 origin을 쿼리 파라미터로 추가
-    if (origin) {
-      redirectUrl.searchParams.append('origin', origin);
+export async function signInWithOAuth(provider: Provider) {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`,
     }
-    
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: redirectUrl.toString(),
-      },
-    });
-    
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error("OAuth 로그인 오류:", error);
-    throw error;
-  }
-};
+  })
+  
+  if (error) throw error
+  return data
+}
 
 // 로그아웃
 export async function signOut() {
