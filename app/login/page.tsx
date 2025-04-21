@@ -12,7 +12,6 @@ import { signInWithEmail, signUp, signInWithOAuth } from "@/lib/supabase/users"
 import { useAuth } from "@/lib/context/AuthContext"
 import { useToast } from "@/components/ui/use-toast"
 import { Provider } from "@supabase/supabase-js"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login")
@@ -133,41 +132,44 @@ export default function LoginPage() {
     try {
       setIsLoading(true)
       
-      // 모바일 환경인지 확인
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      // 모바일 앱 내 웹뷰 감지
+      const isInAppBrowser = 
+        /KAKAOTALK/i.test(navigator.userAgent) || 
+        /Line/i.test(navigator.userAgent) ||
+        /NAVER/i.test(navigator.userAgent) ||
+        /Instagram/i.test(navigator.userAgent) ||
+        /FB_IAB/i.test(navigator.userAgent) ||
+        /FB4A/i.test(navigator.userAgent) ||
+        /FBAN/i.test(navigator.userAgent) ||
+        /Twitter/i.test(navigator.userAgent);
       
-      if (isMobile) {
-        // 모바일 환경에서는 외부 브라우저로 인증 페이지 열기
-        const { data, error } = await createClientComponentClient().auth.signInWithOAuth({
-          provider,
-          options: {
-            redirectTo: window.location.origin + '/auth/callback',
-            skipBrowserRedirect: true,
-          },
-        });
+      if (isInAppBrowser) {
+        // 앱 내 브라우저일 경우 안내 모달 표시
+        const confirmed = window.confirm(
+          "앱 내 브라우저에서는 소셜 로그인이 제한될 수 있습니다.\n\n외부 브라우저에서 열기를 권장합니다.\n\n외부 브라우저에서 열까요?"
+        );
         
-        if (error) throw error;
-        
-        if (data?.url) {
-          // 새 창에서 URL 열기 전에 사용자에게 안내
-          toast({
-            title: "외부 브라우저로 이동합니다",
-            description: "로그인을 완료한 후 이 앱으로 돌아와주세요.",
-            duration: 5000,
-          });
+        if (confirmed) {
+          // 현재 URL을 외부 브라우저로 열기
+          const loginUrl = `${window.location.origin}/login`;
           
-          // 1초 후 외부 브라우저로 열기
-          setTimeout(() => {
-            window.open(data.url, '_blank');
-          }, 1000);
-          
-          setIsLoading(false);
+          // iOS
+          if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            window.location.href = `googlechrome://navigate?url=${encodeURIComponent(loginUrl)}`;
+            setTimeout(function() {
+              window.location.href = `safari-https://praying.vercel.app/login`;
+            }, 2000);
+          } 
+          // Android
+          else {
+            window.location.href = `intent://${window.location.host}/login#Intent;scheme=https;package=com.android.chrome;end`;
+          }
           return;
         }
-      } else {
-        // 데스크톱 환경에서는 기존 방식대로 처리
-        await signInWithOAuth(provider);
       }
+      
+      // 정상적인 경우 기존 로그인 처리 진행
+      await signInWithOAuth(provider)
     } catch (error) {
       console.error(error)
       toast({

@@ -29,10 +29,17 @@ interface PrayerRoomListProps {
   onManageRoom?: (roomId: string) => void
   onViewMembers?: (roomId: string) => void
   onSelectRoom?: (roomId: string) => void
-  closeSidebar?: () => void
+  onClose?: () => void // 모바일에서 목록을 닫기 위한 prop
+  isMobile?: boolean // 모바일 여부 확인
 }
 
-export function PrayerRoomList({ onManageRoom, onViewMembers, onSelectRoom, closeSidebar }: PrayerRoomListProps) {
+export function PrayerRoomList({ 
+  onManageRoom, 
+  onViewMembers, 
+  onSelectRoom, 
+  onClose, 
+  isMobile = false 
+}: PrayerRoomListProps) {
   const [rooms, setRooms] = useState<PrayerRoom[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const { toast } = useToast()
@@ -64,24 +71,21 @@ export function PrayerRoomList({ onManageRoom, onViewMembers, onSelectRoom, clos
     fetchPrayerRooms()
   }, [user, toast])
 
-  // 기도방 카드 클릭 핸들러
-  const handleRoomClick = (roomId: string) => {
-    // 모바일 환경인지 확인 (화면 너비로 판단)
-    const isMobile = window.innerWidth < 768;
-    
-    // 기도방 선택 시 
+  // 방 선택 처리 함수
+  const handleRoomSelect = (roomId: string) => {
+    // onSelectRoom 프롭이 전달된 경우 해당 함수 호출
     if (onSelectRoom) {
-      onSelectRoom(roomId);
+      onSelectRoom(roomId)
     } else {
-      // onSelectRoom이 없는 경우 직접 이동
-      router.push(`/prayer-room?id=${roomId}`);
+      // 아니면 기본적으로 해당 방으로 이동
+      router.push(`/prayer-room?roomId=${roomId}`)
     }
     
-    // 모바일 환경에서 사이드바 닫기
-    if (isMobile && closeSidebar) {
-      closeSidebar();
+    // 모바일에서는 선택 후 목록 닫기
+    if (isMobile && onClose) {
+      onClose()
     }
-  };
+  }
 
   if (isLoading) {
     return <div className="text-center py-10">기도방 목록을 불러오는 중...</div>
@@ -103,8 +107,8 @@ export function PrayerRoomList({ onManageRoom, onViewMembers, onSelectRoom, clos
       {rooms.map((room) => (
         <Card 
           key={room.room_id} 
-          className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-          onClick={() => handleRoomClick(room.room_id)}
+          className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => handleRoomSelect(room.room_id)}
         >
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
@@ -146,8 +150,8 @@ export function PrayerRoomList({ onManageRoom, onViewMembers, onSelectRoom, clos
                   variant="outline" 
                   size="sm" 
                   onClick={(e) => {
-                    e.stopPropagation(); // 버블링 방지
-                    onManageRoom(room.room_id);
+                    e.stopPropagation() // 버블링 방지
+                    onManageRoom(room.room_id)
                   }}
                 >
                   관리
@@ -159,8 +163,8 @@ export function PrayerRoomList({ onManageRoom, onViewMembers, onSelectRoom, clos
                   variant="outline" 
                   size="sm" 
                   onClick={(e) => {
-                    e.stopPropagation(); // 버블링 방지
-                    onViewMembers(room.room_id);
+                    e.stopPropagation() // 버블링 방지
+                    onViewMembers(room.room_id)
                   }}
                 >
                   정보
