@@ -257,8 +257,49 @@ export default function PrayerRoomPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-10">
-              <div className="relative w-full max-w-md h-60 mb-6">
-                {/* 귀여운 양 이미지 */}
+              <div className="max-w-2xl mx-auto text-center mb-10">
+                <h2 className="text-2xl font-bold text-sky-600 mb-6">프레이니에 오신 것을 환영합니다</h2>
+                
+                <div className="space-y-4 text-left bg-white rounded-lg shadow-md p-6 border border-sky-100">
+                  <p className="text-gray-700 mb-4">
+                    프레이니는 여러분의 기도 생활을 더욱 풍성하게 만들어 드립니다:
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-start">
+                      <span className="text-sky-600 mr-2">•</span>
+                      <p className="text-gray-700"><span className="font-semibold">기도 커뮤니티</span> - 검색창에서 "공개 기도방"을 찾아 다양한 커뮤니티에 참여하세요. <br />말씀, 기도 응답을 나누고 격려할 수 있습니다.</p>
+                    </div>
+                    
+                    <div className="flex items-start">
+                      <span className="text-sky-600 mr-2">•</span>
+                      <p className="text-gray-700"><span className="font-semibold">개인 기도 기록</span> - 프로필에서 기간별로 나의 모든 기도 제목을 확인할 수 있습니다.</p>
+                    </div>
+                    
+                    <div className="flex items-start">
+                      <span className="text-sky-600 mr-2">•</span>
+                      <p className="text-gray-700"><span className="font-semibold">기도 리포트</span> - 기도 패턴과 응답을 분석한 맞춤형 리포트를 제공합니다.</p>
+                    </div>
+                    
+                    <div className="flex items-start">
+                      <span className="text-sky-600 mr-2">•</span>
+                      <p className="text-gray-700"><span className="font-semibold">AI 솔루션</span> - AI가 추천하는 말씀과 기도문으로 더 깊은 기도 시간을 경험하세요.</p>
+                    </div>
+                    
+                    <div className="flex items-start">
+                      <span className="text-sky-600 mr-2">•</span>
+                      <p className="text-gray-700"><span className="font-semibold">익명 기능</span> - 익명으로 기도 제목을 나누고 중보기도를 요청할 수 있습니다.</p>
+                    </div>
+                  </div>
+                  
+                  <p className="text-center text-muted-foreground text-sm mt-4">
+                    시작하려면 좌측 메뉴에서 기도방을 선택하거나 새 기도방을 만들어보세요.
+                  </p>
+                </div>
+              </div>
+              
+              {/* 귀여운 양 이미지 */}
+              <div className="relative w-full max-w-md h-60 mt-4">
                 <div className="sheep-animation absolute">
                   <div className="sheep relative">
                     <svg className="w-full h-full" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
@@ -287,7 +328,7 @@ export default function PrayerRoomPage() {
                       <rect x="115" y="155" width="8" height="25" rx="4" fill="#D8D8D8" className="sheep-leg-right" />
                     </svg>
                     
-                    {/* 양이 가리키는 방향 화살표 - 동적으로 보였다 사라졌다 함 */}
+                    {/* 양이 가리키는 방향 화살표 */}
                     <div className="pointing-arrow opacity-0 absolute -top-10 left-20">
                       <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M19 12H5M12 5L5 12L12 19" stroke="#3B82F6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -296,7 +337,6 @@ export default function PrayerRoomPage() {
                   </div>
                 </div>
               </div>
-              <p className="text-center text-muted-foreground text-lg font-medium px-4">좌측 메뉴에서 기도방을 선택하세요</p>
               
               {/* 양 애니메이션 스타일 */}
               <style jsx>{`
