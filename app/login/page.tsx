@@ -131,6 +131,44 @@ export default function LoginPage() {
   const handleSocialLogin = async (provider: Provider) => {
     try {
       setIsLoading(true)
+      
+      // 모바일 앱 내 웹뷰 감지
+      const isInAppBrowser = 
+        /KAKAOTALK/i.test(navigator.userAgent) || 
+        /Line/i.test(navigator.userAgent) ||
+        /NAVER/i.test(navigator.userAgent) ||
+        /Instagram/i.test(navigator.userAgent) ||
+        /FB_IAB/i.test(navigator.userAgent) ||
+        /FB4A/i.test(navigator.userAgent) ||
+        /FBAN/i.test(navigator.userAgent) ||
+        /Twitter/i.test(navigator.userAgent);
+      
+      if (isInAppBrowser) {
+        // 앱 내 브라우저일 경우 안내 모달 표시
+        const confirmed = window.confirm(
+          "외부 브라우저에서 열기를 권장합니다.\n\n외부 브라우저에서 열까요?"
+        );
+        
+        if (confirmed) {
+          // 현재 URL을 외부 브라우저로 열기
+          const loginUrl = `${window.location.origin}/login`;
+          
+          // iOS
+          if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            window.location.href = `googlechrome://navigate?url=${encodeURIComponent(loginUrl)}`;
+            setTimeout(function() {
+              window.location.href = `safari-https://praying.vercel.app/login`;
+            }, 2000);
+          } 
+          // Android
+          else {
+            window.location.href = `intent://${window.location.host}/login#Intent;scheme=https;package=com.android.chrome;end`;
+          }
+          return;
+        }
+      }
+      
+      // 정상적인 경우 기존 로그인 처리 진행
       await signInWithOAuth(provider)
     } catch (error) {
       console.error(error)
